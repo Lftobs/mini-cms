@@ -1,0 +1,421 @@
+---
+import CTASection from "./CTASection.astro";
+import DocumentationSection from "./DocumentationSection.astro";
+import FAQSection from "./FAQSection.astro";
+import FooterSection from "./FooterSection.astro";
+import PricingSection from "./PricingSection.astro";
+import TestimonialsSection from "./TestimonialsSection.astro";
+---
+
+<div
+	x-data="{
+    activeCard: 0,
+    progress: 0,
+    interval: null,
+    mounted: true,
+    init() {
+      this.startProgress();
+    },
+    startProgress() {
+      this.interval = setInterval(() => {
+        if (!this.mounted) return;
+        this.progress += 2;
+        if (this.progress >= 100) {
+          this.activeCard = (this.activeCard + 1) % 3;
+          this.progress = 0;
+        }
+      }, 100);
+    },
+    handleCardClick(index) {
+      if (!this.mounted) return;
+      this.activeCard = index;
+      this.progress = 0;
+    },
+    getDashboardContent() {
+      switch (this.activeCard) {
+        case 0: return 'Customer Subscription Status and Details';
+        case 1: return 'Analytics Dashboard - Real-time Insights';
+        case 2: return 'Data Visualization - Charts and Metrics';
+        default: return 'Customer Subscription Status and Details';
+      }
+    },
+    scrollToSection(sectionId) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }"
+	x-init="init()"
+	@beforeunload="mounted = false; clearInterval(interval)"
+	class="w-full min-h-screen relative bg-[#F7F5F3] overflow-x-hidden flex flex-col justify-start items-center"
+>
+	<div class="relative flex flex-col justify-start items-center w-full">
+		<!-- Main container with proper margins -->
+		<div
+			class="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] relative flex flex-col justify-start items-start min-h-screen"
+		>
+			<!-- Left vertical line -->
+			<div
+				class="w-[1px] h-full absolute left-4 sm:left-6 md:left-8 lg:left-0 top-0 bg-[rgba(55,50,47,0.12)] shadow-[1px_0px_0px_white] z-0"
+			>
+			</div>
+
+			<!-- Right vertical line -->
+			<div
+				class="w-[1px] h-full absolute right-4 sm:right-6 md:right-8 lg:right-0 top-0 bg-[rgba(55,50,47,0.12)] shadow-[1px_0px_0px_white] z-0"
+			>
+			</div>
+
+			<div
+				class="self-stretch pt-[9px] overflow-hidden border-b border-[rgba(55,50,47,0.06)] flex flex-col justify-center items-center gap-4 sm:gap-6 md:gap-8 lg:gap-[66px] relative z-10"
+			>
+				<!-- Navigation -->
+				<div
+					class="w-full h-12 sm:h-14 md:h-16 lg:h-[84px] absolute left-0 top-0 flex justify-center items-center z-20 px-6 sm:px-8 md:px-12 lg:px-0"
+				>
+					<div
+						class="w-full h-0 absolute left-0 top-6 sm:top-7 md:top-8 lg:top-[42px] border-t border-[rgba(55,50,47,0.12)] shadow-[0px_1px_0px_white]"
+					>
+					</div>
+
+					<div
+						class="w-full max-w-[calc(100%-32px)] sm:max-w-[calc(100%-48px)] md:max-w-[calc(100%-64px)] lg:max-w-[700px] lg:w-[700px] h-10 sm:h-11 md:h-12 py-1.5 sm:py-2 px-3 sm:px-4 md:px-4 pr-2 sm:pr-3 bg-[#F7F5F3] backdrop-blur-sm shadow-[0px_0px_0px_2px_white] overflow-hidden rounded-[50px] flex justify-between items-center relative z-30"
+					>
+						<div class="flex justify-center items-center">
+							<div
+								class="flex flex-col justify-center text-[#2F3037] text-sm sm:text-base md:text-lg lg:text-xl font-medium leading-5 font-sans"
+							>
+								mini-cms
+							</div>
+							<div
+								class="pl-3 sm:pl-4 md:pl-5 lg:pl-5 flex justify-start items-start hidden sm:flex flex-row gap-2 sm:gap-3 md:gap-4 lg:gap-4"
+							>
+								<div
+									class="flex justify-start items-center cursor-pointer"
+									@click="scrollToSection('docs')"
+								>
+									<div
+										class="flex flex-col justify-center text-[rgba(49,45,43,0.80)] text-xs md:text-[13px] font-medium leading-[14px] font-sans"
+									>
+										Products
+									</div>
+								</div>
+								<div
+									class="flex justify-start items-center cursor-pointer"
+									@click="scrollToSection('pricing')"
+								>
+									<div
+										class="flex flex-col justify-center text-[rgba(49,45,43,0.80)] text-xs md:text-[13px] font-medium leading-[14px] font-sans"
+									>
+										Pricing
+									</div>
+								</div>
+								<div
+									class="flex justify-start items-center cursor-pointer"
+									@click="scrollToSection('docs')"
+								>
+									<div
+										class="flex flex-col justify-center text-[rgba(49,45,43,0.80)] text-xs md:text-[13px] font-medium leading-[14px] font-sans"
+									>
+										Docs
+									</div>
+								</div>
+							</div>
+						</div>
+						<div
+							class="h-6 sm:h-7 md:h-8 flex justify-start items-start gap-2 sm:gap-3"
+						>
+							<div
+								class="px-2 sm:px-3 md:px-[14px] py-1 sm:py-[6px] bg-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] overflow-hidden rounded-full flex justify-center items-center"
+							>
+								<a
+									href="/auth/login"
+									class="flex flex-col justify-center text-[#37322F] text-xs md:text-[13px] font-medium leading-5 font-sans"
+								>
+									Log in
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Hero Section -->
+				<div
+					class="pt-16 sm:pt-20 md:pt-24 lg:pt-[216px] pb-8 sm:pb-12 md:pb-16 flex flex-col justify-start items-center px-2 sm:px-4 md:px-8 lg:px-0 w-full sm:pl-0 sm:pr-0 pl-0 pr-0"
+				>
+					<div
+						class="w-full max-w-[937px] lg:w-[937px] flex flex-col justify-center items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6"
+					>
+						<div
+							class="self-stretch rounded-[3px] flex flex-col justify-center items-center gap-4 sm:gap-5 md:gap-6 lg:gap-8"
+						>
+							<div
+								class="w-full max-w-[748.71px] lg:w-[748.71px] text-center flex justify-center flex-col text-[#37322F] text-[24px] xs:text-[28px] sm:text-[36px] md:text-[52px] lg:text-[80px] font-normal leading-[1.1] sm:leading-[1.15] md:leading-[1.2] lg:leading-24 font-sans px-2 sm:px-4 md:px-0"
+							>
+								Manage your content
+								<br />
+								directly in GitHub
+							</div>
+							<div
+								class="w-full max-w-[506.08px] lg:w-[506.08px] text-center flex justify-center flex-col text-[rgba(55,50,47,0.80)] sm:text-lg md:text-xl leading-[1.4] sm:leading-[1.45] md:leading-[1.5] lg:leading-7 font-sans px-2 sm:px-4 md:px-0 lg:text-lg font-medium text-sm"
+							>
+								A minimal CMS that connects to your GitHub
+								repositories.
+								<br class="hidden sm:block" />
+								Edit MDX and Markdown files with ease.
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="w-full max-w-[497px] lg:w-[497px] flex flex-col justify-center items-center gap-6 sm:gap-8 md:gap-10 lg:gap-12 relative z-10 mt-6 sm:mt-8 md:mt-10 lg:mt-12"
+					>
+						<div
+							class="backdrop-blur-[8.25px] flex justify-start items-center gap-4"
+						>
+							<div
+								class="h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-[#37322F] shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center cursor-pointer"
+								@click="scrollToSection('pricing')"
+							>
+								<div
+									class="w-20 sm:w-24 md:w-28 lg:w-44 h-[41px] absolute left-0 top-[-0.5px] bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply"
+								>
+								</div>
+								<div
+									class="flex flex-col justify-center text-white text-sm sm:text-base md:text-[15px] font-medium leading-5 font-sans"
+								>
+									Start for free
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="w-full max-w-[900px] lg:w-[900px] pt-2 sm:pt-4 pb-6 sm:pb-8 md:pb-10 px-2 sm:px-4 md:px-6 lg:px-11 flex flex-col justify-center items-center gap-2 relative z-5 my-8 sm:my-12 md:my-16 lg:my-16 mb-0 lg:pb-0"
+					>
+						<div
+							class="w-full max-w-[900px] lg:w-[900px] h-[150px] sm:h-[280px] md:h-[450px] lg:h-[605px] bg-white shadow-[0px_0px_0px_0.9056603908538818px_rgba(0,0,0,0.08)] overflow-hidden rounded-[6px] sm:rounded-[8px] lg:rounded-[9.06px] flex flex-col justify-start items-start"
+						>
+							<!-- Dashboard Content -->
+							<div
+								class="self-stretch flex-1 flex justify-start items-start"
+							>
+								<!-- Main Content -->
+								<div
+									class="w-full h-full flex items-center justify-center"
+								>
+									<div
+										class="relative w-full h-full overflow-hidden"
+									>
+										<!-- Product Image 1 - Github Integration -->
+										<div
+											x-show="activeCard === 0"
+											x-transition:enter="transition-all duration-500 ease-in-out"
+											x-transition:enter-start="opacity-0 scale-95 blur-sm"
+											x-transition:enter-end="opacity-100 scale-100 blur-0"
+											x-transition:leave="transition-all duration-500 ease-in-out"
+											x-transition:leave-start="opacity-100 scale-100 blur-0"
+											x-transition:leave-end="opacity-0 scale-95 blur-sm"
+											class="absolute inset-0"
+										>
+											<img
+												src="img/git2.png"
+												alt="Github Integration"
+												class="w-full h-full aspect-[1/1]"
+											/>
+										</div>
+
+										<!-- Product Image 2 - Rich Text Editor -->
+										<div
+											x-show="activeCard === 1"
+											x-transition:enter="transition-all duration-500 ease-in-out"
+											x-transition:enter-start="opacity-0 scale-95 blur-sm"
+											x-transition:enter-end="opacity-100 scale-100 blur-0"
+											x-transition:leave="transition-all duration-500 ease-in-out"
+											x-transition:leave-start="opacity-100 scale-100 blur-0"
+											x-transition:leave-end="opacity-0 scale-95 blur-sm"
+											class="absolute inset-0"
+										>
+											<img
+												src="img/editor2.png"
+												alt="Rich Text Editor"
+												class="w-full h-full aspect-[1/1]"
+											/>
+										</div>
+
+										<!-- Product Image 3 - Project Management -->
+										<div
+											x-show="activeCard === 2"
+											x-transition:enter="transition-all duration-500 ease-in-out"
+											x-transition:enter-start="opacity-0 scale-95 blur-sm"
+											x-transition:enter-end="opacity-100 scale-100 blur-0"
+											x-transition:leave="transition-all duration-500 ease-in-out"
+											x-transition:leave-start="opacity-100 scale-100 blur-0"
+											x-transition:leave-end="opacity-0 scale-95 blur-sm"
+											class="absolute inset-0"
+										>
+											<img
+												src="img/proj.png"
+												alt="Project Management"
+												class="w-full h-full aspect-[1/1]"
+											/>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="self-stretch border-t border-b border-[#E0DEDB] flex justify-center items-start"
+					>
+						<div
+							class="w-4 sm:w-6 md:w-8 lg:w-12 self-stretch relative overflow-hidden"
+						>
+							<!-- Left decorative pattern -->
+							<div
+								class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start"
+							>
+								<template x-for="i in 50">
+									<div
+										class="self-stretch h-3 sm:h-4 rotate-[-45deg] origin-top-left outline outline-[rgba(3,7,18,0.08)] outline-offset-[-0.25px]"
+									>
+									</div>
+								</template>
+							</div>
+						</div>
+
+						<div
+							class="flex-1 px-0 sm:px-2 md:px-0 flex flex-col md:flex-row justify-center items-stretch gap-0"
+						>
+							<!-- Feature Cards -->
+							<div
+								@click="handleCardClick(0)"
+								:class="activeCard === 0 ? 'bg-white shadow-[0px_0px_0px_0.75px_#E0DEDB_inset]' : 'border-l-0 border-r-0 md:border border-[#E0DEDB]/80'"
+								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0"
+							>
+								<div
+									x-show="activeCard === 0"
+									class="absolute top-0 left-0 w-full h-0.5 bg-[rgba(50,45,43,0.08)]"
+								>
+									<div
+										class="h-full bg-[#322D2B] transition-all duration-100 ease-linear"
+										:style="`width: ${progress}%`"
+									>
+									</div>
+								</div>
+
+								<div
+									class="self-stretch flex justify-center flex-col text-[#49423D] text-sm md:text-sm font-semibold leading-6 md:leading-6 font-sans"
+								>
+									GitHub Integration
+								</div>
+								<div
+									class="self-stretch text-[#605A57] text-[13px] md:text-[13px] font-normal leading-[22px] md:leading-[22px] font-sans"
+								>
+									Connect directly to your GitHub repositories
+									and manage content with version control
+									built-in.
+								</div>
+							</div>
+							<div
+								@click="handleCardClick(1)"
+								:class="activeCard === 1 ? 'bg-white shadow-[0px_0px_0px_0.75px_#E0DEDB_inset]' : 'border-l-0 border-r-0 md:border border-[#E0DEDB]/80'"
+								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0"
+							>
+								<div
+									x-show="activeCard === 1"
+									class="absolute top-0 left-0 w-full h-0.5 bg-[rgba(50,45,43,0.08)]"
+								>
+									<div
+										class="h-full bg-[#322D2B] transition-all duration-100 ease-linear"
+										:style="`width: ${progress}%`"
+									>
+									</div>
+								</div>
+
+								<div
+									class="self-stretch flex justify-center flex-col text-[#49423D] text-sm md:text-sm font-semibold leading-6 md:leading-6 font-sans"
+								>
+									Rich Text Editor
+								</div>
+								<div
+									class="self-stretch text-[#605A57] text-[13px] md:text-[13px] font-normal leading-[22px] md:leading-[22px] font-sans"
+								>
+									Edit MDX and Markdown files with a powerful
+									WYSIWYG editor and live preview.
+								</div>
+							</div>
+							<div
+								@click="handleCardClick(2)"
+								:class="activeCard === 2 ? 'bg-white shadow-[0px_0px_0px_0.75px_#E0DEDB_inset]' : 'border-l-0 border-r-0 md:border border-[#E0DEDB]/80'"
+								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0"
+							>
+								<div
+									x-show="activeCard === 2"
+									class="absolute top-0 left-0 w-full h-0.5 bg-[rgba(50,45,43,0.08)]"
+								>
+									<div
+										class="h-full bg-[#322D2B] transition-all duration-100 ease-linear"
+										:style="`width: ${progress}%`"
+									>
+									</div>
+								</div>
+
+								<div
+									class="self-stretch flex justify-center flex-col text-[#49423D] text-sm md:text-sm font-semibold leading-6 md:leading-6 font-sans"
+								>
+									Project Management
+								</div>
+								<div
+									class="self-stretch text-[#605A57] text-[13px] md:text-[13px] font-normal leading-[22px] md:leading-[22px] font-sans"
+								>
+									Organize your content with projects, track
+									activity, and manage permissions.
+								</div>
+							</div>
+						</div>
+
+						<div
+							class="w-4 sm:w-6 md:w-8 lg:w-12 self-stretch relative overflow-hidden"
+						>
+							<!-- Right decorative pattern -->
+							<div
+								class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start"
+							>
+								<template x-for="i in 50">
+									<div
+										class="self-stretch h-3 sm:h-4 rotate-[-45deg] origin-top-left outline outline-[rgba(3,7,18,0.08)] outline-offset-[-0.25px]"
+									>
+									</div>
+								</template>
+							</div>
+						</div>
+					</div>
+
+					<!-- Social Proof Section -->
+
+					<!-- Documentation Section -->
+					<DocumentationSection />
+
+					<!-- Testimonials Section -->
+					<TestimonialsSection />
+
+					<!-- Pricing Section -->
+					<PricingSection />
+
+					<!-- FAQ Section -->
+					<FAQSection />
+
+					<!-- CTA Section -->
+					<CTASection />
+
+					<!-- Footer Section -->
+					<!-- Placeholder for FooterSection -->
+					<FooterSection />
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

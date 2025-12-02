@@ -1,0 +1,520 @@
+---
+import Flame from "@tabler/icons/outline/flame.svg";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+} from "@/components/starwind/alert";
+import { Button } from "@/components/starwind/button";
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/starwind/select";
+import {
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/starwind/sheet";
+import { Spinner } from "@/components/starwind/spinner";
+import Textarea from "@/components/starwind/textarea";
+import { $orgState } from "@/store/navStore";
+
+const orgsData = $orgState.get() || [];
+const ssrOrganizations = Array.isArray(orgsData) ? orgsData : [];
+---
+
+<SheetContent
+	class="bg-white font-sans text-earth-500 overflow-y-auto"
+	x-data={`formHandler(${JSON.stringify(ssrOrganizations)})`}
+>
+	<SheetHeader>
+		<SheetTitle class="font-bold">Create New Project</SheetTitle>
+		<SheetDescription>
+			<div>
+				Create a new project to connect your GitHub repository and start
+				collaborating with your team.
+			</div>
+
+			<Alert variant="error" x-show="error != ''" class="my-4">
+				<AlertTitle class="text-red-700 font-semibold">
+					<Flame class="text-red-700" />
+					Error!
+				</AlertTitle>
+				<AlertDescription x-text="error" />
+			</Alert>
+		</SheetDescription>
+	</SheetHeader>
+	<form method="POST" class="w-">
+		<div class="grid gap-4 px-4 pb-4 flex-1 overflow-y-auto">
+			<div class="grid gap-2">
+				<Label for="name">Project Name</Label>
+				<Input
+					id="name"
+					name="name"
+					placeholder="my-awesome-project"
+					x-model="name"
+					class="border-gray-600 focus-visible:bg-earth-50"
+					required
+				/>
+			</div>
+			<div class="grid gap-2">
+				<Label for="description">Description</Label>
+				<Textarea
+					id="description"
+					name="description"
+					placeholder="A brief description of your project"
+					value=""
+					class="border-gray-600 focus-visible:bg-earth-50"
+					rows="3"
+					required
+				/>
+			</div>
+			<div class="grid gap-2">
+				<Label for="orgs_id">Organization</Label>
+				<Select name="orgs_id" class="w-full" x-ref="orgSelect">
+					<SelectTrigger
+						class="w-full px-3 py-2 border border-gray-600 rounded-md bg-white"
+					>
+						<SelectValue placeholder="Select an organization" />
+					</SelectTrigger>
+					<SelectContent class="w-[60%]">
+						{
+							ssrOrganizations.map((org) => (
+								<SelectItem
+									value={String(org.id)}
+									class="justify-center"
+								>
+									{org.name}
+								</SelectItem>
+							))
+						}
+					</SelectContent>
+				</Select>
+				{
+					!ssrOrganizations.length && (
+						<p class="text-sm text-red-600 mt-1">
+							No organizations found.
+							<a
+								href="/dashboard/orgs/new"
+								class="text-blue-600 hover:text-blue-500 underline"
+							>
+								Create one first
+							</a>
+						</p>
+					)
+				}
+			</div>
+			<div class="grid gap-2">
+				<Label>Repository Selection</Label>
+				<div class="space-y-3">
+					<div class="flex gap-3 w-full max-w-md">
+						<button
+							type="button"
+							@click="loadRepositories"
+							:disabled="isLoadingRepos || !selectedOrgId"
+							class="inline-flex items-center gap-2 px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-white text-earth-700 hover:bg-earth-50 focus:outline-none focus:ring-2 focus:ring-earth-500 focus:border-earth-500 disabled:opacity-50 disabled:cursor-not-allowed w-[10rem]"
+						>
+							<Spinner x-show="isLoadingRepos" />
+							<span
+								x-text="isLoadingRepos ? 'Loading...' : 'Load Repositories'"
+							></span>
+						</button>
+						<div x-show="showRepos" class="flex-1 relative">
+							<div
+								class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+							>
+								<svg
+									class="h-5 w-5 text-gray-400"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+									></path>
+								</svg>
+							</div>
+							<Input
+								type="text"
+								placeholder="Search repositories..."
+								class="border-gray-600 focus-visible:bg-earth-50 pl-10 w-[11rem]"
+								x-model="repoSearch"
+								@input="filterRepos"
+							/>
+						</div>
+					</div>
+					<div x-show="showRepos" class="">
+						<div
+							class="space-y-2 h-48 overflow-y-auto border border-gray-200 rounded-md p-2 bg-earth-50"
+							x-ref="reposContainer"
+							@scroll="handleScroll"
+						>
+							<template
+								x-for="repo in displayedRepos"
+								:key="repo.id"
+							>
+								<div
+									class="repo-item border border-gray-200 rounded-lg p-3 hover:border-earth-300 transition-colors cursor-pointer"
+									:class="selectedRepo?.id === repo.id ? 'bg-earth-50 border-earth-300' : ''"
+									@click="selectRepository(repo)"
+									:x-data="{ repo: repo }"
+								>
+									<div
+										class="flex justify-between items-start"
+									>
+										<div class="flex-1">
+											<div
+												class="flex items-center gap-2 mb-1"
+											>
+												<h4
+													class="font-medium text-gray-900"
+													x-text="repo.name.length > 20 ? repo.name.substring(0, 20) + '...' : repo.name"
+												>
+												</h4>
+											</div>
+										</div>
+										<button
+											type="button"
+											class="ml-4 px-3 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-earth-500"
+											:class="selectedRepo?.id === repo.id ? 'bg-earth-600 text-white border-earth-600' : 'border-gray-300 hover:bg-gray-50'"
+											@click.stop="selectRepository(repo)"
+										>
+											<span
+												x-text="selectedRepo?.id === repo.id ? 'Selected' : 'Select'"
+											>
+											</span>
+										</button>
+									</div>
+								</div>
+							</template>
+							<div
+								x-show="isLoadingMore"
+								class="text-center py-4"
+							>
+								<Spinner />
+								<span class="ml-2 text-sm text-gray-600"
+									>Loading more...</span
+								>
+							</div>
+							<div
+								x-show="!hasMore && displayedRepos.length > 0 && !repoSearch"
+								class="text-center py-4 text-sm text-gray-500"
+							>
+								No more repositories to load
+							</div>
+							<div
+								x-show="displayedRepos.length === 0 && !isLoadingRepos && !isLoadingMore"
+								class="text-center py-4 text-sm text-gray-500"
+							>
+								No repositories found
+							</div>
+						</div>
+					</div>
+					<input
+						type="hidden"
+						name="repo_name"
+						type="hidden"
+						name="repo_name"
+						x-bind:value="selectedRepo?.name"
+					/>
+					<input
+						type="hidden"
+						name="github_repo_url"
+						x-bind:value="selectedRepo?.html_url"
+					/>
+				</div>
+			</div>
+			<div class="grid gap-2">
+				<Label>Visibility</Label>
+				<div class="flex gap-4">
+					<label
+						class="flex items-center space-x-2 rounded-lg border border-earth-200 px-4 py-2 cursor-pointer hover:bg-earth-100/50"
+					>
+						<input
+							type="radio"
+							name="visibility"
+							value="private"
+							class="w-4 h-4 text-earth-500 focus:ring-earth-500 accent-earth-500"
+							x-model="visibility"
+							disabled
+						/>
+						<span class="text-sm font-medium text-earth-500"
+							>Private</span
+						>
+					</label>
+					<label
+						class="flex items-center space-x-2 rounded-lg border border-earth-200 px-4 py-2 cursor-pointer hover:bg-earth-100/50"
+					>
+						<input
+							type="radio"
+							name="visibility"
+							value="public"
+							checked
+							class="w-4 h-4 text-earth-500 focus:ring-earth-500 accent-earth-500"
+							x-model="visibility"
+						/>
+						<span class="text-sm font-medium text-earth-500"
+							>Public</span
+						>
+					</label>
+				</div>
+			</div>
+		</div>
+		<SheetFooter
+			class="absolute w-full bottom-0 flex justify-center text-earth-100"
+		>
+			<Button
+				type="submit"
+				class="bg-earth-500 hover:bg-earth-200"
+				:disabled="!canSubmit"
+				@click.prevent="handleSubmit"
+			>
+				<Spinner x-show="isLoading" />
+				<span x-text="isLoading ? 'Creating Project...' : text"></span>
+			</Button>
+		</SheetFooter>
+	</form>
+</SheetContent>
+
+<script>
+	import { actions, isInputError } from "astro:actions";
+	import Alpine from "alpinejs";
+	import api from "@/lib/clients";
+	import { $orgState } from "@/store/navStore";
+
+	Alpine.data("formHandler", (initialOrgs: any[] = []) => ({
+		text: "Create Project",
+		isLoading: false,
+		error: "",
+		name: "",
+		allOrgs: initialOrgs,
+		selectedOrgId: "",
+		selectedOrgInstallationId: "",
+		visibility: "public",
+		repositories: [],
+		filteredRepos: [],
+		displayedRepos: [],
+		selectedRepo: null,
+		showRepos: false,
+		isLoadingRepos: false,
+		isLoadingMore: false,
+		repoSearch: "",
+		itemsPerPage: 10,
+		currentPage: 1,
+		hasMore: true,
+
+		init() {
+			// If initialOrgs is empty (SSR with no local storage access), try to get from store on client
+			if (this.allOrgs.length === 0) {
+				const storeOrgs = $orgState.get();
+				if (storeOrgs && storeOrgs.length > 0) {
+					this.allOrgs = storeOrgs;
+				}
+			}
+
+			// Bridge Starwind Select -> Alpine state
+			document.addEventListener("starwind-select:change", (e: any) => {
+				const detail = (e && e.detail) || {};
+				const target = e && (e.target as HTMLElement);
+
+				// Check name property or attribute
+				const targetName =
+					target?.name || target?.getAttribute?.("name");
+
+				// Only handle changes for the orgs_id select
+				if (targetName === "orgs_id") {
+					// Refresh orgs from store if still empty
+					if (this.allOrgs.length === 0) {
+						this.allOrgs = $orgState.get() || [];
+					}
+
+					const selectedOrg = this.allOrgs.find(
+						(org: any) => String(org.id) === String(detail?.value),
+					);
+
+					if (selectedOrg) {
+						this.selectedOrgId = selectedOrg.id;
+						this.selectedOrgInstallationId =
+							selectedOrg.installationId;
+					}
+				}
+			});
+		},
+
+		async canSubmit() {
+			return (
+				this.selectedOrgId &&
+				this.selectedRepo &&
+				this.name &&
+				!this.isLoading
+			);
+		},
+
+		async loadRepositories() {
+			if (!this.selectedOrgId) {
+				this.error = "Please select an organization first";
+				return;
+			}
+
+			this.isLoadingRepos = true;
+			this.error = "";
+
+			try {
+				const response = await api.projects.repo.integrate.repos.$get({
+					query: {
+						projectId: this.selectedOrgId,
+						orgInstallationId: this.selectedOrgInstallationId,
+					},
+				});
+
+				if (!response.ok) {
+					this.error = "Failed to load repositories";
+				}
+
+				const data = await response.json();
+
+				const repos = data.data;
+
+				if (repos) {
+					this.repositories = repos;
+					this.filteredRepos = repos;
+					this.currentPage = 1;
+					this.displayedRepos = this.filteredRepos.slice(
+						0,
+						this.itemsPerPage,
+					);
+					this.hasMore =
+						this.filteredRepos.length > this.itemsPerPage;
+					this.showRepos = true;
+				} else {
+					this.error = data.error || "Failed to load repositories";
+				}
+			} catch (err) {
+				console.error("Error loading repositories:", err);
+				this.error = "Failed to load repositories. Please try again.";
+			} finally {
+				this.isLoadingRepos = false;
+			}
+		},
+
+		filterRepos() {
+			if (!this.repoSearch.trim()) {
+				this.filteredRepos = this.repositories;
+			} else {
+				const searchTerm = this.repoSearch.toLowerCase();
+				this.filteredRepos = this.repositories.filter(
+					(repo: any) =>
+						repo.name.toLowerCase().includes(searchTerm) ||
+						repo.full_name.toLowerCase().includes(searchTerm) ||
+						(repo.description &&
+							repo.description
+								.toLowerCase()
+								.includes(searchTerm)),
+				);
+			}
+			this.currentPage = 1;
+			this.displayedRepos = this.filteredRepos.slice(
+				0,
+				this.itemsPerPage,
+			);
+			this.hasMore = this.filteredRepos.length > this.itemsPerPage;
+		},
+
+		handleScroll() {
+			if (this.repoSearch) return; // Don't paginate when searching
+
+			const container = this.$refs.reposContainer;
+			if (!container) return;
+
+			const scrollTop = container.scrollTop;
+			const scrollHeight = container.scrollHeight;
+			const clientHeight = container.clientHeight;
+
+			// Load more when near bottom (within 50px)
+			if (
+				scrollTop + clientHeight >= scrollHeight - 50 &&
+				this.hasMore &&
+				!this.isLoadingMore
+			) {
+				this.loadMoreRepos();
+			}
+		},
+
+		loadMoreRepos() {
+			if (this.isLoadingMore || !this.hasMore) return;
+
+			this.isLoadingMore = true;
+			const nextPage = this.currentPage + 1;
+			const startIndex = nextPage * this.itemsPerPage;
+			const endIndex = startIndex + this.itemsPerPage;
+
+			setTimeout(() => {
+				const newRepos = this.filteredRepos.slice(startIndex, endIndex);
+				this.displayedRepos = [...this.displayedRepos, ...newRepos];
+				this.currentPage = nextPage;
+				this.hasMore = endIndex < this.filteredRepos.length;
+				this.isLoadingMore = false;
+			}, 300);
+		},
+
+		selectRepository(repo: any) {
+			this.selectedRepo = repo;
+			if (!this.name || String(this.name).trim() === "") {
+				this.name = repo?.name || "";
+			}
+		},
+
+		async handleSubmit(e: any) {
+			e.preventDefault();
+			this.isLoading = true;
+			this.error = "";
+
+			const form = e.target.closest("form");
+
+			const formData = new FormData(form);
+
+			if (!this.selectedRepo) {
+				this.error = "Please select a repository";
+				this.isLoading = false;
+				return;
+			}
+
+			const orgsId = formData.get("orgs_id");
+			if (!orgsId) {
+				this.error = "Please select an organization";
+				this.isLoading = false;
+				return;
+			}
+
+			const projectData = {
+				name: formData.get("name"),
+				description: formData.get("description") || "",
+				repo_name: (this.selectedRepo as any).name,
+				github_repo_url: (this.selectedRepo as any).html_url,
+				orgs_id: parseInt(String(orgsId || "")),
+			};
+
+			const { data, error } =
+				await actions.projectsActions.createProject(formData);
+
+			this.isLoading = false;
+
+			if (error) {
+				this.error = error.message || "An error occurred";
+				return;
+			}
+
+			window.location.href = "/dashboard";
+		},
+	}));
+</script>

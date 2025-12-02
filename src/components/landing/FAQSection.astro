@@ -1,0 +1,84 @@
+---
+// FAQSection.astro
+const faqData = [
+	{
+		question: "What is mini-cms and who is it for?",
+		answer:
+			"mini-cms is a minimal content management system that connects directly to your GitHub repositories. It's perfect for developers, content teams, and technical writers who want to manage MDX and Markdown files with full version control.",
+	},
+	{
+		question: "How does GitHub integration work?",
+		answer:
+			"mini-cms uses GitHub App authentication to connect to your repositories. You can browse, edit, and create files directly in your GitHub repos. All changes are committed with proper version control, so you maintain full history and can use pull requests.",
+	},
+	{
+		question: "What file types can I edit?",
+		answer:
+			"mini-cms supports MDX and Markdown files. You can configure which directories and file extensions are editable through project settings. The rich text editor provides a WYSIWYG interface with live preview.",
+	},
+	{
+		question: "How do projects and organizations work?",
+		answer:
+			"You can organize your content into projects, each linked to a GitHub repository. Projects belong to organizations, which can be connected to your personal GitHub account or GitHub organizations. This allows you to manage multiple repositories efficiently.",
+	},
+	{
+		question: "Is my content secure?",
+		answer:
+			"Absolutely. mini-cms uses GitHub App authentication, so it only accesses repositories you explicitly grant permission to. All edits go through GitHub's secure API, and your content stays in your repositories with full version control.",
+	},
+	{
+		question: "How do I get started with mini-cms?",
+		answer:
+			"Getting started is simple! Sign up with your GitHub account, install the GitHub App, and create your first project linked to a repository. You can start editing files immediately with our free plan.",
+	},
+];
+---
+
+<div id="faq" class="w-full flex justify-center items-start">
+  <div class="flex-1 px-4 md:px-12 py-16 md:py-20 flex flex-col lg:flex-row justify-start items-start gap-6 lg:gap-12">
+    <!-- Left Column - Header -->
+    <div class="w-full lg:flex-1 flex flex-col justify-center items-start gap-4 lg:py-5">
+      <div class="w-full flex flex-col justify-center text-[#49423D] font-semibold leading-tight md:leading-[44px] font-sans text-4xl tracking-tight">
+        Frequently Asked Questions
+      </div>
+      <div class="w-full text-[#605A57] text-base font-normal leading-7 font-sans">
+        Explore your data, build your dashboard,
+        <br class="hidden md:block" />
+        bring your team together.
+      </div>
+    </div>
+
+    <!-- Right Column - FAQ Items -->
+    <div class="w-full lg:flex-1 flex flex-col justify-center items-center">
+      <div class="w-full flex flex-col">
+        {faqData.map((item, index) => (
+          <details class="w-full border-b border-[rgba(73,66,61,0.16)] overflow-hidden group">
+            <summary class="w-full px-5 py-[18px] flex justify-between items-center gap-5 text-left hover:bg-[rgba(73,66,61,0.02)] transition-colors duration-200 cursor-pointer list-none">
+              <div class="flex-1 text-[#49423D] text-base font-medium leading-6 font-sans">
+                {item.question}
+              </div>
+              <div class="flex justify-center items-center">
+                <svg
+                  class="w-6 h-6 text-[rgba(73,66,61,0.60)] transition-transform duration-300 ease-in-out group-open:rotate-180"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </div>
+            </summary>
+
+            <div class="overflow-hidden transition-all duration-300 ease-in-out group-open:max-h-96 group-open:opacity-100 max-h-0 opacity-0">
+              <div class="px-5 pb-[18px] text-[#605A57] text-sm font-normal leading-6 font-sans">
+                {item.answer}
+              </div>
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>

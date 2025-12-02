@@ -1,0 +1,221 @@
+<section>
+    <div class="w-full border-b border-[rgba(55,50,47,0.12)] flex flex-col justify-center items-center">
+        <div class="self-stretch px-4 sm:px-6 md:px-24 py-8 sm:py-12 md:py-16 border-b border-[rgba(55,50,47,0.12)] flex justify-center items-center gap-6">
+          <div class="w-full max-w-[586px] px-4 sm:px-6 py-4 sm:py-5  overflow-hidden rounded-lg flex flex-col justify-start items-center gap-3 sm:gap-4 shadow-none">
+            <div class="px-[14px] py-[6px] bg-white overflow-hidden rounded-[90px] flex justify-start items-center gap-[8px] border border-[rgba(2,6,23,0.08)] shadow-xs">
+              <div class="w-[14px] h-[14px] relative overflow-hidden flex items-center justify-center">
+                <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="3" width="4" height="6" stroke="#37322F" fill="none" />
+                  <rect x="7" y="1" width="4" height="8" stroke="#37322F" fill="none" />
+                  <rect x="2" y="4" width="1" height="1" fill="#37322F" />
+                  <rect x="3.5" y="4" width="1" height="1" fill="#37322F" />
+                  <rect x="2" y="5.5" width="1" height="1" fill="#37322F" />
+                  <rect x="3.5" y="5.5" width="1" height="1" fill="#37322F" />
+                  <rect x="8" y="2" width="1" height="1" fill="#37322F" />
+                  <rect x="9.5" y="2" width="1" height="1" fill="#37322F" />
+                  <rect x="8" y="3.5" width="1" height="1" fill="#37322F" />
+                  <rect x="9.5" y="3.5" width="1" height="1" fill="#37322F" />
+                  <rect x="8" y="5" width="1" height="1" fill="#37322F" />
+                  <rect x="9.5" y="5" width="1" height="1" fill="#37322F" />
+                </svg>
+              </div>
+              <div class="text-center flex justify-center flex-col text-[#37322F] text-xs font-medium leading-3 font-sans">
+                Social Proof
+              </div>
+            </div>
+            <div class="w-full max-w-[472.55px] text-center flex justify-center flex-col text-[#49423D] text-xl sm:text-2xl md:text-3xl lg:text-5xl font-semibold leading-tight md:leading-[60px] font-sans tracking-tight">
+              Confidence backed by results
+            </div>
+            <div class="self-stretch text-center text-[#605A57] text-sm sm:text-base font-normal leading-6 sm:leading-7 font-sans">
+              Our customers achieve more each day
+              <br class="hidden sm:block" />
+              because their tools are simple, powerful, and clear.
+            </div>
+          </div>
+        </div>
+
+        <!-- Logo Grid -->
+        <div class="self-stretch border-[rgba(55,50,47,0.12)] flex justify-center items-start border-t border-b-0">
+          <div class="w-4 sm:w-6 md:w-8 lg:w-12 self-stretch relative overflow-hidden">
+            <!-- Left decorative pattern -->
+            <div class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start">
+              <template x-for="i in 50">
+                <div
+                  class="self-stretch h-3 sm:h-4 rotate-[-45deg] origin-top-left outline outline-[rgba(3,7,18,0.08)] outline-offset-[-0.25px]"
+                ></div>
+              </template>
+            </div>
+          </div>
+
+          <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-0 border-l border-r border-[rgba(55,50,47,0.12)]">
+            <!-- Logo Grid - Responsive grid -->
+            <template x-for="index in 8">
+              <div
+                :class="`
+                  h-24 xs:h-28 sm:h-32 md:h-36 lg:h-40 flex justify-center items-center gap-1 xs:gap-2 sm:gap-3
+                  border-b border-[rgba(227,226,225,0.5)]
+                  ${index < 6 ? 'sm:border-b-[0.5px]' : 'sm:border-b'}
+                  ${index >= 6 ? 'border-b' : ''}
+                  ${index % 2 === 0 ? 'border-r-[0.5px]' : ''}
+                  sm:border-r-[0.5px] sm:border-l-0
+                  ${index % 4 === 0 ? 'md:border-l' : 'md:border-l-[0.5px]'}
+                  ${index % 4 === 3 ? 'md:border-r' : 'md:border-r-[0.5px]'}
+                  ${index < 4 ? 'md:border-b-[0.5px]' : ''}
+                  ${index >= 4 ? 'md:border-t-[0.5px] md:border-b' : ''}
+                  border-[#E3E2E1]
+                `"
+              >
+                <div class="w-6 h-6 xs:w-7 xs:h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 relative shadow-[0px_-4px_8px_rgba(255,255,255,0.64)_inset] overflow-hidden rounded-full">
+                  <img src="/horizon-icon.svg" alt="Horizon" class="w-full h-full object-contain" />
+                </div>
+                <div class="text-center flex justify-center flex-col text-[#37322F] text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-medium leading-tight md:leading-9 font-sans">
+                  Acute
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <div class="w-4 sm:w-6 md:w-8 lg:w-12 self-stretch relative overflow-hidden">
+            <!-- Right decorative pattern -->
+            <div class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start">
+              <template x-for="i in 50">
+                <div
+                  class="self-stretch h-3 sm:h-4 rotate-[-45deg] origin-top-left outline  outline-[rgba(3,7,18,0.08)] outline-offset-[-0.25px]"
+                ></div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bento Grid Section -->
+      <div class="w-full border-b border-[rgba(55,50,47,0.12)] flex flex-col justify-center items-center">
+        <!-- Header Section -->
+        <div class="self-stretch px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] py-8 sm:py-12 md:py-16 border-b border-[rgba(55,50,47,0.12)] flex justify-center items-center gap-6">
+          <div class="w-full max-w-[616px] lg:w-[616px] px-4 sm:px-6 py-4 sm:py-5 overflow-hidden rounded-lg flex flex-col justify-start items-center gap-3 sm:gap-4 shadow-none">
+            <div class="px-[14px] py-[6px] bg-white 
+             overflow-hidden rounded-[90px] flex justify-start items-center gap-[8px] border border-[rgba(2,6,23,0.08)] shadow-xs">
+              <div class="w-[14px] h-[14px] relative overflow-hidden flex items-center justify-center">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="4" height="4" stroke="#37322F" fill="none" />
+                  <rect x="7" y="1" width="4" height="4" stroke="#37322F" fill="none" />
+                  <rect x="1" y="7" width="4" height="4" stroke="#37322F" fill="none" />
+                  <rect x="7" y="7" width="4" height="4" stroke="#37322F" fill="none" />
+                </svg>
+              </div>
+              <div class="text-center flex justify-center flex-col text-[#37322F] text-xs font-medium leading-3 font-sans">
+                Bento grid
+              </div>
+            </div>
+            <div class="w-full max-w-[598.06px] lg:w-[598.06px] text-center flex justify-center flex-col text-[#49423D] text-xl sm:text-2xl md:text-3xl lg:text-5xl font-semibold leading-tight md:leading-[60px] font-sans tracking-tight">
+              Built for absolute clarity and focused work
+            </div>
+            <div class="self-stretch text-center text-[#605A57] text-sm sm:text-base font-normal leading-6 sm:leading-7 font-sans">
+              Stay focused with tools that organize, connect
+              <br />
+              and turn information into confident decisions.
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento Grid Content -->
+        <div class="self-stretch flex justify-center items-start">
+          <div class="w-4 sm:w-6 md:w-8 lg:w-12 self-stretch relative overflow-hidden">
+            <!-- Left decorative pattern -->
+            <div class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start">
+              <template x-for="i in 200">
+                <div
+                  class="self-stretch h-3 sm:h-4 rotate-[-45deg] origin-top-left outline outline-[rgba(3,7,18,0.08)] outline-offset-[-0.25px]"
+                ></div>
+              </template>
+            </div>
+          </div>
+
+          <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-0 border-l border-r border-[rgba(55,50,47,0.12)]">
+            <!-- Top Left - Smart. Simple. Brilliant. -->
+            <div class="border-b border-r-0 md:border-r border-[rgba(55,50,47,0.12)] p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col justify-start items-start gap-4 sm:gap-6">
+              <div class="flex flex-col gap-2">
+                <h3 class="text-[#37322F] text-lg sm:text-xl font-semibold leading-tight font-sans">
+                  Smart. Simple. Brilliant.
+                </h3>
+                <p class="text-[#605A57] text-sm md:text-base font-normal leading-relaxed font-sans">
+                  Your data is beautifully organized so you see everything clearly without the clutter.
+                </p>
+              </div>
+              <div class="w-full h-[200px] sm:h-[250px] md:h-[300px] rounded-lg flex items-center justify-center overflow-hidden">
+                <!-- Placeholder for SmartSimpleBrilliant component -->
+                <div class="text-center">Smart Simple Brilliant Component</div>
+              </div>
+            </div>
+
+            <!-- Top Right - Your work, in sync -->
+            <div class="border-b border-[rgba(55,50,47,0.12)] p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col justify-start items-start gap-4 sm:gap-6">
+              <div class="flex flex-col gap-2">
+                <h3 class="text-[#37322F] font-semibold leading-tight font-sans text-lg sm:text-xl">
+                  Your work, in sync
+                </h3>
+                <p class="text-[#605A57] text-sm md:text-base font-normal leading-relaxed font-sans">
+                  Every update flows instantly across your team and keeps collaboration effortless and fast.
+                </p>
+              </div>
+              <div class="w-full h-[200px] sm:h-[250px] md:h-[300px] rounded-lg flex overflow-hidden text-right items-center justify-center">
+                <!-- Placeholder for YourWorkInSync component -->
+                <div class="text-center">Your Work In Sync Component</div>
+              </div>
+            </div>
+
+            <!-- Bottom Left - Effortless integration -->
+            <div class="border-r-0 md:border-r border-[rgba(55,50,47,0.12)] p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col justify-start items-start gap-4 sm:gap-6 bg-transparent">
+              <div class="flex flex-col gap-2">
+                <h3 class="text-[#37322F] text-lg sm:text-xl font-semibold leading-tight font-sans">
+                  Effortless integration
+                </h3>
+                <p class="text-[#605A57] text-sm md:text-base font-normal leading-relaxed font-sans">
+                  All your favorite tools connect in one place and work together seamlessly by design.
+                </p>
+              </div>
+              <div class="w-full h-[200px] sm:h-[250px] md:h-[300px] rounded-lg flex overflow-hidden justify-center items-center relative bg-transparent">
+                <div class="w-full h-full flex items-center justify-center bg-transparent">
+                  <!-- Placeholder for EffortlessIntegration component -->
+                  <div class="text-center">Effortless Integration Component</div>
+                </div>
+                <!-- Gradient mask for soft bottom edge -->
+                <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#F7F5F3] to-transparent pointer-events-none"></div>
+              </div>
+            </div>
+
+            <!-- Bottom Right - Numbers that speak -->
+            <div class="p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col justify-start items-start gap-4 sm:gap-6">
+              <div class="flex flex-col gap-2">
+                <h3 class="text-[#37322F] text-lg sm:text-xl font-semibold leading-tight font-sans">
+                  Numbers that speak
+                </h3>
+                <p class="text-[#605A57] text-sm md:text-base font-normal leading-relaxed font-sans">
+                  Track growth with precision and turn raw data into confident decisions you can trust.
+                </p>
+              </div>
+              <div class="w-full h-[200px] sm:h-[250px] md:h-[300px] rounded-lg flex overflow-hidden items-center justify-center relative">
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <!-- Placeholder for NumbersThatSpeak component -->
+                  <div class="text-center">Numbers That Speak Component</div>
+                </div>
+                <!-- Gradient mask for soft bottom edge -->
+                <div class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#F7F5F3] to-transparent pointer-events-none"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="w-4 sm:w-6 md:w-8 lg:w-12 self-stretch relative overflow-hidden">
+            <!-- Right decorative pattern -->
+            <div class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start">
+              <template x-for="i in 200">
+                <div
+                  class="self-stretch h-3 sm:h-4 rotate-[-45deg] origin-top-left outline outline-[rgba(3,7,18,0.08)] outline-offset-[-0.25px]"
+                ></div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+</section>

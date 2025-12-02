@@ -1,0 +1,19 @@
+---
+import { Sheet, SheetTrigger } from "@/components/starwind/sheet";
+
+const formTypes = ["project", "orgs"];
+
+interface Props {
+	form: "project" | "orgs";
+}
+
+const { form } = Astro.props;
+---
+
+<Sheet>
+	<SheetTrigger asChild>
+		<slot name="sheet-form-trigger" />
+	</SheetTrigger>
+
+	<slot />
+</Sheet>

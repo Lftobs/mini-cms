@@ -1,13 +1,10 @@
-// import tailwindcss from "@tailwindcss/vite";
-
 import alpinejs from "@astrojs/alpinejs";
 import db from "@astrojs/db";
 import node from "@astrojs/node";
 import react from "@astrojs/react";
-import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
-// import tailwind from "@astrojs/tailwind";
+
 
 // https://astro.build/config
 export default defineConfig({
@@ -18,7 +15,6 @@ export default defineConfig({
 	integrations: [
 		db(),
 		react(),
-		svelte(),
 		alpinejs({
 			entrypoint: "/src/entrypoint",
 		}),

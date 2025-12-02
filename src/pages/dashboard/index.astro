@@ -1,0 +1,633 @@
+---
+import { actions } from "astro:actions";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/starwind/dialog";
+import DashboardLayout from "@/layouts/DashboardNewLayout.astro";
+import { $orgState, currentOrgIdState } from "@/store/navStore";
+import { userProjects } from "@/utils/cachedFn";
+
+export const prerender = false;
+
+const currentUser = Astro.locals.currentUser;
+const userId = currentUser?.id;
+
+const installationId = Astro.url.searchParams.get("installation_id");
+const state = Astro.url.searchParams.get("state");
+
+let installationSuccessMessage = "";
+let installationErrorMessage = "";
+let shouldRedirectToCleanUrl = false;
+
+if (installationId && state) {
+	try {
+		const orgId = state;
+
+		const result = await Astro.callAction(
+			actions.orgsActions.addInstallationId,
+			{
+				orgId,
+				installationId,
+			},
+		);
+
+		if (result.data) {
+			installationSuccessMessage =
+				"GitHub App installation successful! Your organization is now connected.";
+		}
+	} catch (error) {
+		installationErrorMessage =
+			"There was an error connecting your GitHub App installation. Please try again.";
+	} finally {
+		shouldRedirectToCleanUrl = true;
+	}
+}
+
+const userOrgs = $orgState.get() || [];
+
+const orgIdParam = Astro.url.searchParams.get("org");
+let currentOrg = null;
+
+if (orgIdParam && Array.isArray(userOrgs) && userOrgs.length > 0) {
+	currentOrg = userOrgs.find((org) => org.id.toString() === orgIdParam);
+	if (currentOrg) {
+		currentOrgIdState.set(currentOrg.id);
+	}
+}
+
+if (!currentOrg && !orgIdParam) {
+	const currentOrgId = currentOrgIdState.get();
+	if (currentOrgId && Array.isArray(userOrgs)) {
+		currentOrg = userOrgs.find((org) => org.id === currentOrgId);
+	}
+}
+
+if (!currentOrg && Array.isArray(userOrgs) && userOrgs.length > 0) {
+	currentOrg = userOrgs[0];
+	currentOrgIdState.set(currentOrg.id);
+
+	if (!orgIdParam) {
+		return Astro.redirect("/dashboard?org=" + currentOrg.id);
+	}
+}
+
+const userName = currentUser?.githubName || currentUser?.username;
+
+const needsGitHubInstallation = !currentOrg?.installationId;
+
+let projects = [];
+let hasMoreProjects = false;
+if (currentOrg && userId) {
+	try {
+		const projectsResponse = userProjects.fetch(userId);
+		const projectsData = (await projectsResponse).data;
+		if (projectsData) {
+			const orgProjects = projectsData.filter(
+				(project) => project.org_id === currentOrg.id,
+			);
+			hasMoreProjects = orgProjects.length > 6;
+			// display first 6 - TODO: implement pagination or a view all projects button in the required component
+			projects = orgProjects.slice(0, 6);
+		}
+	} catch (error) {
+		console.error("Error fetching projects:", error);
+	}
+}
+---
+
+<DashboardLayout>
+	<div class="space-y-6" slot="content">
+		<!-- GitHub Installation Messages -->
+		{
+			installationSuccessMessage ? (
+				<div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+					<div class="flex items-center">
+						<svg
+							class="w-5 h-5 text-green-600 mr-3"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+						<div>
+							<p class="text-sm font-medium text-green-800">
+								Installation Successful
+							</p>
+							<p class="text-sm text-green-700">
+								{installationSuccessMessage}
+							</p>
+						</div>
+					</div>
+				</div>
+			) : installationErrorMessage && needsGitHubInstallation ? (
+				<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+					<div class="flex items-center">
+						<svg
+							class="w-5 h-5 text-red-600 mr-3"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+							/>
+						</svg>
+						<div>
+							<p class="text-sm font-medium text-red-800">
+								Installation Error
+							</p>
+							<p class="text-sm text-red-700">
+								{installationErrorMessage}
+							</p>
+						</div>
+					</div>
+				</div>
+			) : null
+		}
+
+		<!-- GitHub Installation Dialog -->
+		{
+			needsGitHubInstallation && !installationSuccessMessage && (
+				<Dialog id="github-install-dialog">
+					<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+						<div class="flex items-center justify-between">
+							<div class="flex items-center">
+								<svg
+									class="w-5 h-5 text-yellow-600 mr-3"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+									/>
+								</svg>
+								<div>
+									<p class="text-sm font-medium text-yellow-800">
+										GitHub Integration Required
+									</p>
+									<p class="text-sm text-yellow-700">
+										Your organization needs to install the
+										GitHub app to access repository
+										features.
+									</p>
+								</div>
+							</div>
+							<DialogTrigger asChild>
+								<button class="ml-4 px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-md hover:bg-yellow-500 transition-colors">
+									Install
+								</button>
+							</DialogTrigger>
+						</div>
+					</div>
+					<DialogContent class="bg-white">
+						<DialogHeader>
+							<DialogTitle class="text-earth-400">
+								Install GitHub App
+							</DialogTitle>
+							<DialogDescription>
+								To connect your repositories and enable project
+								management features, you need to install our
+								GitHub App for your organization.
+							</DialogDescription>
+						</DialogHeader>
+						<div class="py-4">
+							<p class="text-sm text-earth-300 mb-4">
+								The GitHub App allows you to:
+							</p>
+							<ul class="text-sm text-earth-300 space-y-2">
+								<li>
+									• Connect GitHub repositories to your
+									projects
+								</li>
+								<li>
+									• Manage content directly from your
+									dashboard
+								</li>
+								<li>
+									• Track changes and collaborate with your
+									team
+								</li>
+							</ul>
+						</div>
+						<DialogFooter>
+							<a
+								href={`https://github.com/apps/collab-x-main/installations/new?state=${currentOrg?.id}`}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="inline-flex items-center px-4 py-2 bg-earth-400 text-white text-sm font-medium rounded-md hover:bg-earth-300 transition-colors"
+							>
+								<svg
+									class="w-4 h-4 mr-2"
+									fill="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+								</svg>
+								Install GitHub App
+							</a>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			)
+		}
+
+		<!-- Welcome Section -->
+		<div class="bg-white rounded-lg shadow-sm border border-earth-100 p-6">
+			<h1 class="text-2xl font-semibold text-earth-400 mb-2">
+				Welcome back, {userName}!
+			</h1>
+			<p class="text-earth-300">
+				Here's what's happening with your projects in <span
+					class="inline-block bg-yellow-100 font-bold text-earth-400 px-2 py-1 rounded-full text-xs"
+					>{currentOrg?.name || "your organization"}</span
+				> today.
+			</p>
+		</div>
+
+		<!-- Stats Cards -->
+		<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+			<div
+				class="bg-white rounded-lg shadow-sm border border-earth-100 p-6"
+			>
+				<div class="flex items-center">
+					<div class="p-2 bg-earth-50 rounded-lg">
+						<svg
+							class="w-6 h-6 text-earth-400"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+							></path>
+						</svg>
+					</div>
+					<div class="ml-4">
+						<p class="text-sm font-medium text-earth-200">
+							Total Projects
+						</p>
+						<p class="text-2xl font-semibold text-earth-400">
+							{projects.length ?? 0}
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div
+				class="bg-white rounded-lg shadow-sm border border-earth-100 p-6"
+			>
+				<div class="flex items-center">
+					<div class="p-2 bg-earth-50 rounded-lg">
+						<svg
+							class="w-6 h-6 text-earth-400"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+							></path>
+						</svg>
+					</div>
+					<div class="ml-4">
+						<p class="text-sm font-medium text-earth-200">
+							Published Content
+						</p>
+						<p class="text-2xl font-semibold text-earth-400">0</p>
+					</div>
+				</div>
+			</div>
+
+			<div
+				class="bg-white rounded-lg shadow-sm border border-earth-100 p-6"
+			>
+				<div class="flex items-center">
+					<div class="p-2 bg-earth-50 rounded-lg">
+						<svg
+							class="w-6 h-6 text-earth-400"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+						</svg>
+					</div>
+					<div class="ml-4">
+						<p class="text-sm font-medium text-earth-200">
+							This Month
+						</p>
+						<p class="text-2xl font-semibold text-earth-400">+0%</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Projects & Recent Activity -->
+		<div
+			class="bg-white rounded-lg shadow-sm border border-earth-100 p-6"
+			x-data="{ activeTab: 'projects' }"
+		>
+			<div class="flex items-center justify-between mb-4">
+				<h2 class="text-lg font-semibold text-earth-400">
+					Projects & Activity
+				</h2>
+				<div class="flex space-x-1">
+					<button
+						class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+						:class="activeTab === 'projects' ? 'bg-earth-50 text-earth-400' : ''"
+						@click="activeTab = 'projects'"
+					>
+						Projects
+					</button>
+					<button
+						class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+						:class="activeTab === 'activity' ? 'bg-earth-50 text-earth-400' : ''"
+						@click="activeTab = 'activity'"
+					>
+						Activity
+					</button>
+				</div>
+			</div>
+
+			<!-- Projects View -->
+			<div x-show="activeTab === 'projects'" x-transition>
+				{
+					projects.length > 0 && (
+						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+							{projects.map((project) => (
+								<div class="bg-earth-50 rounded-lg p-3 border border-earth-100 hover:border-earth-200 transition-colors">
+									<div class="flex items-start justify-between">
+										<div class="flex-1">
+											<h3 class="font-medium text-earth-400 mb-1">
+												{project.name ||
+													"Unnamed Project"}
+											</h3>
+											<p class="text-sm text-earth-300">
+												{project.description ||
+													"No description"}
+											</p>
+										</div>
+										<div class="flex space-x-2 ml-2">
+											{project.github_repo_link && (
+												<a
+													href={
+														project.github_repo_link
+													}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="inline-flex items-center px-2 py-1 text-xs font-medium text-earth-400 bg-white border border-earth-200 rounded-md hover:bg-earth-50 transition-colors"
+												>
+													<svg
+														class="w-3 h-3 mr-1"
+														fill="currentColor"
+														viewBox="0 0 24 24"
+													>
+														<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+													</svg>
+													View Repo
+												</a>
+											)}
+											<a
+												href={`/dashboard/project/edit/${project.id}`}
+												class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-earth-400 border border-earth-400 rounded-md hover:bg-earth-300 transition-colors"
+											>
+												<svg
+													class="w-3 h-3 mr-1"
+													fill="none"
+													stroke="currentColor"
+													viewBox="0 0 24 24"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														stroke-width="2"
+														d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+													/>
+												</svg>
+												Edit
+											</a>
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					)
+				}
+				{
+					hasMoreProjects && projects.length > 0 && (
+						<div class="mt-4 text-center">
+							<a
+								href="/dashboard/projects"
+								class="inline-flex items-center px-4 py-2 text-sm font-medium text-earth-400 bg-earth-50 border border-earth-200 rounded-md hover:bg-earth-100 transition-colors"
+							>
+								<svg
+									class="w-4 h-4 mr-2"
+									fill="none"
+									stroke="currentColor"
+									viewBox="0 0 24 24"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M4 6h16M4 10h16M4 14h16M4 18h16"
+									/>
+								</svg>
+								View All Projects
+							</a>
+						</div>
+					)
+				}
+				{
+					projects.length === 0 && (
+						<div class="text-center py-8">
+							<svg
+								class="w-12 h-12 text-earth-200 mx-auto mb-4"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+								/>
+							</svg>
+							<p class="text-earth-300 mb-2">No projects yet</p>
+							<p class="text-sm text-earth-200">
+								Create your first project to get started
+							</p>
+						</div>
+					)
+				}
+			</div>
+
+			<!-- Recent Activity View -->
+			<div
+				x-show="activeTab === 'activity'"
+				x-transition
+				class="space-y-4"
+			>
+				<div class="flex items-center space-x-3">
+					<div class="w-2 h-2 bg-earth-400 rounded-full"></div>
+					<div class="flex-1">
+						<p class="text-sm text-earth-300">
+							Updated project "Company Blog" content
+						</p>
+						<p class="text-xs text-earth-200">2 hours ago</p>
+					</div>
+				</div>
+				<div class="flex items-center space-x-3">
+					<div class="w-2 h-2 bg-earth-400 rounded-full"></div>
+					<div class="flex-1">
+						<p class="text-sm text-earth-300">
+							Published new article "Getting Started with MDX"
+						</p>
+						<p class="text-xs text-earth-200">5 hours ago</p>
+					</div>
+				</div>
+				<div class="flex items-center space-x-3">
+					<div class="w-2 h-2 bg-earth-400 rounded-full"></div>
+					<div class="flex-1">
+						<p class="text-sm text-earth-300">
+							Connected GitHub repository "portfolio-site"
+						</p>
+						<p class="text-xs text-earth-200">1 day ago</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Quick Actions -->
+		<div class="bg-white rounded-lg shadow-sm border border-earth-100 p-6">
+			<h2 class="text-lg font-semibold text-earth-400 mb-4">
+				Quick Actions
+			</h2>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<a
+					href={`/dashboard/project/new${orgIdParam ? `?org=${orgIdParam}` : ""}`}
+					class="flex items-center p-4 border border-earth-100 rounded-lg hover:bg-earth-50 transition-colors"
+				>
+					<svg
+						class="w-6 h-6 text-earth-400 mr-3"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+						></path>
+					</svg>
+					<div>
+						<p class="font-medium text-earth-400">
+							Create New Project
+						</p>
+						<p class="text-sm text-earth-200">
+							Start a new content project
+						</p>
+					</div>
+				</a>
+
+				<a
+					href="/dashboard/org/new"
+					class="flex items-center p-4 border border-earth-100 rounded-lg hover:bg-earth-50 transition-colors"
+				>
+					<svg
+						class="w-6 h-6 text-earth-400 mr-3"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+						></path>
+					</svg>
+					<div>
+						<p class="font-medium text-earth-400">
+							Create New Organization
+						</p>
+						<p class="text-sm text-earth-200">
+							Create a new organization to manage your projects.
+						</p>
+					</div>
+				</a>
+
+				<!-- <a
+					href="/dashboard/content"
+					class="flex items-center p-4 border border-earth-100 rounded-lg hover:bg-earth-50 transition-colors"
+				>
+					<svg
+						class="w-6 h-6 text-earth-400 mr-3"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+						></path>
+					</svg>
+					<div>
+						<p
+							class="font-medium text-earth-400"
+						>
+							Edit Content
+						</p>
+						<p
+							class="text-sm text-earth-200"
+						>
+							Manage your existing
+							content
+						</p>
+					</div>
+				</a> -->
+			</div>
+		</div>
+	</div>
+</DashboardLayout>
+
+<script define:vars={{ shouldRedirectToCleanUrl }}>
+	if (shouldRedirectToCleanUrl) {
+		setTimeout(() => {
+			window.location.href = "/dashboard";
+		}, 1000);
+	}
+</script>

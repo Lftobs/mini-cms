@@ -1,0 +1,16 @@
+{
+    "typescript.tsserver.maxTsServerMemory": 2048,
+    "typescript.tsserver.disableAutomaticTypeAcquisition": true,
+    "search.useIgnoreFiles": true,
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/.git": true,
+        "**/dist": true,
+        "**/build": true
+    },
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true
+    }
+}

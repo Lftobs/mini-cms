@@ -1,0 +1,86 @@
+---
+import "../styles/global.css";
+import { ClientRouter, slide } from "astro:transitions";
+
+interface Props {
+	title: string;
+	description?: string;
+	ogImage?: string;
+}
+
+const {
+	title,
+	description = "Manage your MDX blogs on GitHub with an elegant, interactive dashboard and editor",
+	ogImage = "/og-image.png",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width"
+		/>
+		<link
+			rel="icon"
+			type="image/svg+xml"
+			href="/favicon.svg"
+		/>
+		<meta
+			name="generator"
+			content={Astro.generator}
+		/>
+		<title>{title}</title>
+		<meta
+			name="description"
+			content={description}
+		/>
+		<meta
+			property="og:title"
+			content={title}
+		/>
+		<meta
+			property="og:description"
+			content={description}
+		/>
+		<meta
+			property="og:image"
+			content={ogImage}
+		/>
+		<meta
+			property="og:type"
+			content="website"
+		/>
+		<meta
+			property="twitter:card"
+			content="summary_large_image"
+		/>
+		<meta
+			property="twitter:title"
+			content={title}
+		/>
+		<meta
+			property="twitter:description"
+			content={description}
+		/>
+		<meta
+			property="twitter:image"
+			content={ogImage}
+		/>
+		<ClientRouter />
+		<script
+			defer
+			src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+		></script>
+	</head>
+	<body class="h-screen w-screen">
+		<slot
+			transition:persist
+			transition:animate={slide({
+				duration: "2.4s",
+			})}
+		/>
+	</body>
+</html>

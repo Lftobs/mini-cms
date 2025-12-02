@@ -1,0 +1,95 @@
+---
+const { currentUser } = Astro.props;
+---
+
+<header
+	class="bg-white shadow-sm sticky top-0 z-40 h-16 border-b border-earth-100"
+>
+	<div class="container mx-auto px-4">
+		<div class="flex items-center justify-between h-16">
+			<div class="logo">
+				<a
+					href="/"
+					class="text-xl font-semibold text-earth-600 hover:text-earth-500 transition-colors"
+				>
+					mini-cms
+				</a>
+			</div>
+
+			<div class="user relative" x-data="{ userMenuOpen: false }">
+				<button
+					class="w-10 h-10 rounded-full overflow-hidden cursor-pointer p-0 border-2 border-earth-100 hover:border-earth-200 transition-colors bg-transparent"
+					x-on:click="userMenuOpen = !userMenuOpen"
+				>
+					<img
+						src={currentUser?.pfp}
+						alt="User pfp"
+						class="w-full h-full object-cover"
+					/>
+				</button>
+
+				<div
+					class="user-menu absolute top-full right-0 mt-2 w-60 bg-white rounded-lg shadow-lg py-3 z-50 border border-earth-100"
+					x-show="userMenuOpen"
+					x-transition
+					@click.away="userMenuOpen = false"
+					x-cloak
+				>
+					<div
+						class="flex items-center px-4 py-3 border-b border-earth-100 mb-2"
+					>
+						<img
+							src={currentUser?.pfp}
+							alt="User pfp"
+							class="w-9 h-9 rounded-full mr-3"
+						/>
+						<div class="overflow-hidden">
+							<p
+								class="font-semibold text-sm text-earth-400 m-0 truncate"
+							>
+								{
+									currentUser?.githubName ||
+										currentUser?.username
+								}
+							</p>
+							{
+								currentUser?.email && (
+									<p class="text-xs text-earth-300 m-0 truncate">
+										{currentUser.email}
+									</p>
+								)
+							}
+						</div>
+					</div>
+					<ul class="list-none m-0 p-0">
+						<li>
+							<a
+								href="/dashboard/profile"
+								class="block px-4 py-2 text-earth-300 hover:bg-earth-50 hover:text-earth-400 transition-colors"
+							>
+								Your Profile
+							</a>
+						</li>
+						<li>
+							<a
+								href="/dashboard/settings"
+								class="block px-4 py-2 text-earth-300 hover:bg-earth-50 hover:text-earth-400 transition-colors"
+							>
+								Settings
+							</a>
+						</li>
+						<li class="h-px bg-earth-100 my-2"></li>
+						<li>
+							<a
+								href="/logout"
+								class="block px-4 py-2 text-red-600 hover:bg-earth-50 transition-colors"
+							>
+								Sign out
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+</header>

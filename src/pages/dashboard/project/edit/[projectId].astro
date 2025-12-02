@@ -1,0 +1,198 @@
+---
+import { db, eq, and, Orgs, Projects, ProjectMembers } from "astro:db";
+import MDXEditorMilkdown from "@/components/dashboard/MDXEditorToast.tsx";
+import ProjectSettingsModal from "@/components/dashboard/ProjectSettingsModal.tsx";
+import DashboardLayout from "@/layouts/DashboardNewLayout.astro";
+
+export const prerender = false;
+
+const currentUser = Astro.locals.currentUser;
+const userId = currentUser?.id;
+
+if (!userId) {
+	Astro.redirect("/login");
+}
+
+const { projectId } = Astro.params;
+
+if (!projectId) {
+	return Astro.redirect("/dashboard");
+}
+
+// TODO: use required repository for this query
+const project = await db
+	.select({
+		id: Projects.id,
+		name: Projects.name,
+		description: Projects.description,
+		linked_repo_name: Projects.linked_repo_name,
+		github_repo_link: Projects.github_repo_link,
+		orgs_id: Projects.orgs_id,
+		orgName: Orgs.name,
+		installationId: Orgs.installationId,
+		owner: Orgs.owner,
+	})
+	.from(Projects)
+	.innerJoin(Orgs, eq(Projects.orgs_id, Orgs.id))
+	.where(eq(Projects.id, projectId))
+	.get();
+
+if (!project) {
+	return Astro.redirect("/dashboard");
+}
+
+let hasAccess = false;
+
+if (project.owner === userId) {
+	hasAccess = true;
+} else {
+	const member = await db
+		.select()
+		.from(ProjectMembers)
+		.where(
+			and(
+				eq(ProjectMembers.projectId, projectId),
+				eq(ProjectMembers.userId, userId),
+			),
+		)
+		.get();
+
+	if (member) {
+		hasAccess = true;
+	}
+}
+
+if (!hasAccess) {
+	return Astro.redirect("/dashboard?error=unauthorized");
+}
+
+let repoOwner = "";
+let repoName = project.linked_repo_name || "";
+
+if (project.github_repo_link) {
+	const urlParts = project.github_repo_link.split("/");
+	if (urlParts.length >= 4) {
+		repoOwner = urlParts[3];
+		if (!repoName && urlParts.length >= 5) {
+			repoName = urlParts[4];
+		}
+	}
+}
+
+if (!project.installationId) {
+	return Astro.redirect(
+		`/dashboard?error=github-not-connected&org=${project.orgs_id}`,
+	);
+}
+---
+
+<DashboardLayout>
+	<div class="h-[calc(100vh-140px)] flex flex-col" slot="content">
+		<!-- Breadcrumb & Header -->
+		<div class="bg-white border-b border-earth-100 px-6 py-4">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center space-x-4">
+					<nav
+						class="flex items-center space-x-2 text-sm text-earth-300"
+					>
+						<a
+							href="/dashboard"
+							class="hover:text-earth-500 transition-colors"
+						>
+							<svg
+								class="w-4 h-4"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"
+								></path>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2m-6 4h4"
+								></path>
+							</svg>
+						</a>
+						<svg
+							class="w-4 h-4"
+							fill="currentColor"
+							viewBox="0 0 20 20"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+								clip-rule="evenodd"></path>
+						</svg>
+						<span class="text-earth-500 font-medium"
+							>Content Editor</span
+						>
+					</nav>
+
+					<div class="flex items-center space-x-3">
+						<div
+							class="w-8 h-8 bg-earth-100 rounded-lg flex items-center justify-center"
+						>
+							<svg
+								class="w-4 h-4 text-earth-500"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+								></path>
+							</svg>
+						</div>
+						<div>
+							<h1 class="text-lg font-semibold text-earth-500">
+								{project.name}
+							</h1>
+							<p class="text-sm text-earth-300">
+								{repoOwner}/{repoName}
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="flex items-center space-x-3 gap-3">
+					<ProjectSettingsModal client:load projectId={projectId} />
+					<a
+						href={project.github_repo_link || "#"}
+						target="_blank"
+						class="inline-flex items-center px-3 py-2 text-sm font-medium text-earth-400 bg-earth-50 border border-earth-200 rounded-lg hover:bg-earth-100 hover:text-earth-500 transition-colors"
+					>
+						<svg
+							class="w-4 h-4 mr-2"
+							fill="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"
+							></path>
+						</svg>
+						View on GitHub
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- MDX Editor Component -->
+		<div class="flex-1 overflow-hidden">
+			<MDXEditorMilkdown
+				client:only="react"
+				projectId={projectId}
+				repoOwner={repoOwner}
+				repoName={repoName}
+			/>
+		</div>
+	</div>
+</DashboardLayout>

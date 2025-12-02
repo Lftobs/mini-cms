@@ -1,0 +1,182 @@
+---
+import Flame from "@tabler/icons/outline/flame.svg";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+} from "@/components/starwind/alert";
+import { Button } from "@/components/starwind/button";
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
+import {
+	SheetContent,
+	SheetDescription,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/starwind/sheet";
+import { Spinner } from "@/components/starwind/spinner";
+import Textarea from "@/components/starwind/textarea";
+---
+
+<SheetContent
+	class="bg-white font-sans text-earth-500"
+	x-data="orgFormHandler()"
+>
+	<SheetHeader>
+		<SheetTitle class="font-bold">Add new Organisation</SheetTitle>
+		<SheetDescription>
+			<div>
+				Create a new organisation to manage your projects and
+				collaborate with your team.
+			</div>
+
+			<Alert variant="error" x-show="error != ''" class="my-4">
+				<AlertTitle class="text-red-700 font-semibold">
+					<Flame class="text-red-700" />
+					Error!
+				</AlertTitle>
+				<AlertDescription x-text="error" />
+			</Alert>
+		</SheetDescription>
+	</SheetHeader>
+	<form method="POST">
+		<div class="grid gap-4 px-4">
+			<div class="grid gap-2">
+				<Label for="name">Name</Label>
+				<Input
+					id="name"
+					name="name"
+					placeholder="Pedro Duarte"
+					x-bind:value="name"
+					@input="name = $event.target.value"
+					class="border-gray-600 focus-visible:bg-earth-50"
+				/>
+			</div>
+			<div class="grid gap-2">
+				<Label for="description">Description</Label>
+				<Textarea
+					id="description"
+					name="description"
+					placeholder="A short description of the organisation."
+					x-bind:value="description"
+					@input="description = $event.target.value"
+					class="border-gray-600 focus-visible:bg-earth-50"
+				/>
+			</div>
+			<div class="grid gap-2">
+				<Label> Visibility </Label>
+				<div class="flex gap-4">
+					<label
+						class="flex items-center space-x-2 rounded-lg border border-earth-200 px-4 py-2 cursor-pointer hover:bg-earth-100/50"
+					>
+						<input
+							type="radio"
+							name="visibility"
+							value="private"
+							x-bind:checked="visibility === 'private'"
+							@change="visibility = $event.target.value"
+							class="w-4 h-4 text-earth-500 focus:ring-earth-500 accent-earth-500"
+							disabled
+						/>
+						<span class="text-sm font-medium text-earth-500"
+							>Private</span
+						>
+					</label>
+					<label
+						class="flex items-center space-x-2 rounded-lg border border-earth-200 px-4 py-2 cursor-pointer hover:bg-earth-100/50"
+					>
+						<input
+							type="radio"
+							name="visibility"
+							value="public"
+							x-bind:checked="visibility === 'public'"
+							@change="visibility = $event.target.value"
+							class="w-4 h-4 text-earth-500 focus:ring-earth-500 accent-earth-500"
+						/>
+						<span class="text-sm font-medium text-earth-500"
+							>Public</span
+						>
+					</label>
+				</div>
+			</div>
+		</div>
+		<SheetFooter
+			class="absolute w-full bottom-0 flex justify-center text-earth-100"
+		>
+			<!-- <SheetClose asChild> -->
+			<Button
+				type="submit"
+				class="bg-earth-500 hover:bg-earth-200"
+				:disabled="!isValid() || isLoading"
+				@click.prevent="handleSubmit"
+			>
+				<Spinner x-show="isLoading" />
+				<span x-text="isLoading ? 'Creating Orgs...' : text"></span>
+			</Button>
+			<!-- </SheetClose> -->
+		</SheetFooter>
+	</form>
+</SheetContent>
+
+<script>
+	import { actions, isInputError } from "astro:actions";
+	import Alpine from "alpinejs";
+
+	Alpine.data("orgFormHandler", (self) => ({
+		name: "",
+		description: "",
+		visibility: "public",
+		text: "Submit",
+		isLoading: false,
+		error: "",
+		isValid() {
+			return this.name.trim() !== "" && this.description.trim() !== "";
+		},
+		async handleSubmit(e: Event) {
+			this.error = "";
+			this.isLoading = true;
+			const form = e.target.closest("form");
+			const formData = new FormData(form);
+
+			const { data, error } =
+				await actions.orgsActions.createOrg(formData);
+
+			console.log(error?.message || error);
+
+			if (error) {
+				this.isLoading = false;
+				this.error = isInputError(error)
+					? (() => {
+							const paths = error.issues.map((i) =>
+								i.path.join(","),
+							);
+							if (paths.length === 1) {
+								return `Please provide a valid value for ${paths[0]}.`;
+							}
+							if (paths.length === 2) {
+								return `Please provide valid values for ${paths.join(" and ")}.`;
+							}
+							const last = paths.pop();
+							return `Please provide valid values for ${paths.join(", ")} and ${last}.`;
+						})()
+					: error.message || "An error occurred";
+				// this.error =
+				// 	error.message ||
+				// 	"An error occurred";
+				return;
+			}
+
+			setTimeout(() => {
+				this.isLoading = false;
+				form.reset();
+				this.name = "";
+				this.description = "";
+				this.visibility = "public";
+				this.error = "";
+			}, 100);
+
+			window.location.href = data.redirect;
+		},
+	}));
+</script>

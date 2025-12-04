@@ -110,7 +110,6 @@ export class RepoService {
             per_page: 100,
         });
 
-        // Sort by updated_at descending (most recent first)
         const sortedRepos = data.repositories.sort((a, b) => {
             const aTime = a.updated_at ? new Date(a.updated_at).getTime() : 0;
             const bTime = b.updated_at ? new Date(b.updated_at).getTime() : 0;
@@ -159,7 +158,6 @@ export class RepoService {
     ) {
         const octokit = await this.getProjectOctokit(projectId);
 
-        // Get latest commit SHA
         const { data: refData } = await octokit.rest.git.getRef({
             owner,
             repo,
@@ -167,7 +165,6 @@ export class RepoService {
         });
         const latestCommitSha = refData.object.sha;
 
-        // Create blobs
         const blobs = await Promise.all(
             files.map(async (file) => {
                 const { data } = await octokit.rest.git.createBlob({
@@ -185,7 +182,6 @@ export class RepoService {
             })
         );
 
-        // Create tree
         const { data: treeData } = await octokit.rest.git.createTree({
             owner,
             repo,
@@ -193,7 +189,6 @@ export class RepoService {
             tree: blobs as any,
         });
 
-        // Create commit
         const { data: commitData } = await octokit.rest.git.createCommit({
             owner,
             repo,
@@ -202,7 +197,6 @@ export class RepoService {
             parents: [latestCommitSha],
         });
 
-        // Update ref
         await octokit.rest.git.updateRef({
             owner,
             repo,

@@ -1,21 +1,18 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
-// import { ws } from "./server/webhook";
 import { auth } from "./server/auth";
 import { orgs } from "./server/organizations";
-import { posts } from "./server/posts/index";
 import { projectRoutes } from "./server/projects";
 
 const app = new Hono({ strict: false }).basePath("/api").use("/api/*", cors());
 
-app.get("/api/hi", (c) => c.json({ message: "server is healthy" }));
+app.get("/hi", (c) => c.json({ message: "server is healthy" }));
 
 const routes = app
-	.route("/posts", posts)
 	.route("/projects", projectRoutes)
 	.route("/orgs", orgs)
-	// .route("/ws", ws)
-	.route("/auth", auth);
+	.route("/auth", auth)
+	.get("/health", (c: Context) => c.json({ message: "Mini-cms server is healthy" }));
 
 // serve({
 //   fetch: app.fetch,

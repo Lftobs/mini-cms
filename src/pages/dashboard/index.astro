@@ -70,11 +70,9 @@ if (!currentOrg && !orgIdParam) {
 
 if (!currentOrg && Array.isArray(userOrgs) && userOrgs.length > 0) {
 	currentOrg = userOrgs[0];
-	currentOrgIdState.set(currentOrg.id);
+	// currentOrgIdState.set(currentOrg.id);
 
-	if (!orgIdParam) {
-		return Astro.redirect("/dashboard?org=" + currentOrg.id);
-	}
+	return Astro.redirect("/dashboard?org=" + currentOrg.id);
 }
 
 const userName = currentUser?.githubName || currentUser?.username;

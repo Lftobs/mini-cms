@@ -4,7 +4,15 @@ import { auth } from "./server/auth";
 import { orgs } from "./server/organizations";
 import { projectRoutes } from "./server/projects";
 
-const app = new Hono({ strict: false }).basePath("/api").use("/api/*", cors());
+const app = new Hono({ strict: false }).basePath("/api").use("/api/*", cors({
+	origin: 'https://mini-cms-psi.vercel.app',
+	allowHeaders: ['X-Custom-Header', 'Upgrade-Insecure-Requests'],
+	allowMethods: ['POST', 'GET', 'OPTIONS'],
+	exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+	maxAge: 600,
+	credentials: true,
+}
+));
 
 app.get("/hi", (c) => c.json({ message: "server is healthy" }));
 

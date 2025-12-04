@@ -18,23 +18,22 @@ export default defineConfig({
 		alpinejs({
 			entrypoint: "/src/entrypoint",
 		}),
-		// tailwind(),
+
 	],
-	adapter: node({
-		mode: "standalone",
-	}),
+	adapter: [
+		node({
+			mode: "standalone",
+		}),
+		vercel({
+			webAnalytics: {
+				enabled: true,
+			},
+		}),
+	],
 	vite: {
 		server: {
-			host: true, // Allow external connections
-			allowedHosts: [
-				"19fe-102-89-22-228.ngrok-free.app",
-				"15c22f38fda5.ngrok-free.app",
-				"*",
-			],
-		},
-
-		ssr: {
-			noExternal: ["three", "svelte-cubed"],
+			host: true,
+			allowedHosts: ["*"],
 		},
 
 		plugins: [tailwindcss()],

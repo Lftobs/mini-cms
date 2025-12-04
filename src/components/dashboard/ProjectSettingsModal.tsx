@@ -100,7 +100,7 @@ export default function ProjectSettingsModal({
 					<path
 						strokeLinecap="round"
 						strokeLinejoin="round"
-						stroke-width={2}
+						strokeWidth={2}
 						d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
 					/>
 				</svg>
@@ -127,7 +127,7 @@ export default function ProjectSettingsModal({
 									<path
 										strokeLinecap="round"
 										strokeLinejoin="round"
-										stroke-width={2}
+										strokeWidth={2}
 										d="M6 18L18 6M6 6l12 12"
 									/>
 								</svg>
@@ -206,7 +206,7 @@ export default function ProjectSettingsModal({
 															cy="12"
 															r="10"
 															stroke="currentColor"
-															stroke-width="4"
+															strokeWidth="4"
 														></circle>
 														<path
 															className="opacity-75"

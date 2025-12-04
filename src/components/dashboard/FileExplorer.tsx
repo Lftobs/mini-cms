@@ -67,7 +67,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		type: "file" | "dir";
 	} | null>(null);
 
-	// Load directory contents
 	const loadDirectoryContents = useCallback(
 		async (path: string = "") => {
 			try {
@@ -120,10 +119,9 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 	}, [projectId]);
 
-	// Build tree structure from flat file list
+	// build tree structure from flat file list
 	const buildTree = useCallback(
 		(items: FileItem[], dirPath: string = ""): DirectoryNode[] => {
-			// Start with server items
 			const nodes: DirectoryNode[] = items.map((item) => ({
 				name: item.name,
 				path: item.path,
@@ -134,14 +132,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 				expanded: expandedDirs.has(item.path),
 			}));
 
-			// Merge pending creates that belong to this directory
 			const pendingInDir = pendingCreates.filter((p) => {
 				const parentPath = p.path.split("/").slice(0, -1).join("/");
 				return parentPath === dirPath;
 			});
 
 			pendingInDir.forEach((p) => {
-				// Avoid duplicates if file already exists on server (though unlikely for new creates)
+				// avoid duplicates if file already exists on server
 				if (!nodes.some((n) => n.path === p.path)) {
 					nodes.push({
 						name: p.path.split("/").pop() || "",
@@ -156,7 +153,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 				}
 			});
 
-			// Sort: directories first, then files, both alphabetically
 			nodes.sort((a, b) => {
 				if (a.type !== b.type) {
 					return a.type === "dir" ? -1 : 1;
@@ -179,10 +175,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 				const dirs = await fetchSettings();
 
 				if (dirs && dirs.length > 0) {
-					// For root, we just show the allowed directories as roots
-					// We need to check if any pending creates are at the root level (unlikely given allowed dirs constraint)
-					// But actually, allowed dirs are the roots.
-					// Pending creates will be inside these dirs.
 
 					const nodes: DirectoryNode[] = dirs.map((dir: string) => ({
 						name: dir,
@@ -205,11 +197,9 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		loadRoot();
 	}, [loadDirectoryContents, fetchSettings]);
 
-	// ... (reload effect remains same) ...
 
 	useEffect(() => {
 		const handleSettingsUpdate = () => {
-			// Reload settings and files
 			const reload = async () => {
 				setIsLoading(true);
 				try {
@@ -246,7 +236,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		};
 	}, [fetchSettings, loadDirectoryContents]);
 
-	// Toggle directory expansion
 	const toggleDirectory = async (dirPath: string) => {
 		const isExpanded = expandedDirs.has(dirPath);
 		const newExpandedDirs = new Set(expandedDirs);
@@ -275,10 +264,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 			});
 		} else {
 			newExpandedDirs.add(dirPath);
-
-			// Load directory contents if not already loaded
 			try {
-				// If it's a pending directory, it has no server contents yet
 				const isPendingDir = pendingCreates.some(
 					(p) => p.path === dirPath && p.type === "folder",
 				);
@@ -318,14 +304,10 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		setExpandedDirs(newExpandedDirs);
 	};
 
-	// ... (handleFileClick, handleContextMenu, useEffect remain same) ...
-
-	// Handle file selection
 	const handleFileClick = (file: DirectoryNode) => {
 		if (file.type === "dir") {
 			toggleDirectory(file.path);
 		} else {
-			// Don't allow selecting the same file that's already selected
 			if (selectedFile?.path === file.path) {
 				return;
 			}
@@ -339,7 +321,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 	};
 
-	// Handle context menu
 	const handleContextMenu = (e: React.MouseEvent, node: DirectoryNode) => {
 		e.preventDefault();
 		setContextMenu({
@@ -350,7 +331,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		});
 	};
 
-	// Close context menu
 	useEffect(() => {
 		const handleClick = () => setContextMenu(null);
 		document.addEventListener("click", handleClick);
@@ -359,7 +339,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	const [isCreating, setIsCreating] = useState(false);
 
-	// Create new file or folder
 	const handleCreate = async () => {
 		if (!newItemName.trim() || isCreating) return;
 
@@ -368,55 +347,9 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
 		try {
 			if (onFileCreate) {
-				// Client-side creation
 				onFileCreate(fullPath, createType);
-
-				// We need to refresh the view to show the new item
-				// Since pendingCreates prop will update, the effect or re-render should handle it
-				// But we need to make sure the parent directory is expanded and re-rendered
-
-				// If we created in a subdirectory, we might need to trigger a refresh of that node
-				// But since pendingCreates is passed down, we just need to re-run buildTree for the visible nodes.
-				// React will handle the re-render when props change.
-				// However, if the parent dir wasn't expanded, we might want to expand it?
-				// For now, let's assume the user is creating in a visible context or we just rely on the user to expand.
-
-				// Actually, if we are creating in `createPath`, that path is likely visible (since we clicked a button on it).
-
-				// We might need to force update the tree to include the new pending item immediately if it doesn't happen automatically.
-				// But `buildTree` depends on `pendingCreates`, so when parent updates `pendingCreates`, this component re-renders, calling `buildTree` again?
-				// Wait, `buildTree` is called inside `toggleDirectory` and `loadRoot`.
-				// We need to update `rootContents` when `pendingCreates` changes.
-
-				// Let's add an effect to update tree when pendingCreates changes?
-				// Or just rely on the fact that we are modifying the tree structure.
-				// Actually, `rootContents` is state. We need to update it.
-				// But `rootContents` is a deep structure.
-				// A simple way is to re-fetch/re-build the currently expanded directories.
-				// Or simpler: just close the modal and let the user see it.
-				// Wait, if we don't update `rootContents`, the new item won't show up!
-
-				// We need a way to inject the new item into `rootContents`.
-				// Since `pendingCreates` is a prop, we can use an effect to update `rootContents` when it changes.
-				// But `rootContents` contains the full tree.
-				// Re-building the whole tree is hard because we don't have all the data (it's loaded on demand).
-
-				// Strategy:
-				// When `pendingCreates` changes, we can traverse `rootContents` and inject the new items if their parent is expanded.
-				// Or, we can just trigger a re-render of the relevant nodes.
-
-				// Let's try to update `rootContents` by re-mapping it with `buildTree` logic?
-				// No, `buildTree` takes a flat list.
-
-				// Let's just manually inject into `rootContents` for now in `handleCreate`?
-				// No, `pendingCreates` comes from parent.
-
-				// Let's add an effect that runs when `pendingCreates` changes.
-				// It will traverse `rootContents` and add missing pending items.
 			} else {
-				// Server-side creation (fallback)
 				if (createType === "file") {
-					// ... existing server logic ...
 					const response = await (api.projects as any)[projectId].repo[
 						repoOwner
 					][repoName]["create-file"].$post({
@@ -428,18 +361,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 					});
 					if (!response.ok) throw new Error(response.statusText);
 				} else {
-					// Folder creation on server requires a file (git limitation)
-					// Since we don't want .gitkeep, we can't create an empty folder on server.
-					// We'll just return or show a message.
 					alert(
 						"Cannot create empty folder on server. Please create a file inside it.",
 					);
 					return;
 				}
-				// Refresh the file tree
 				const contents = await loadDirectoryContents();
-				// This only reloads root. We might need to reload specific dir.
-				// But existing logic was `setRootContents(buildTree(contents))`.
 			}
 
 			setShowCreateModal(false);
@@ -452,18 +379,15 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 	};
 
-	// Check if file has draft
 	const hasDraft = (filePath: string) => {
 		const draftKey = `${repoOwner}/${repoName}/${filePath}`;
 		return !!drafts[draftKey];
 	};
 
-	// Helper to merge pending creates into the tree during render
 	const mergePending = useCallback(
 		(nodes: DirectoryNode[] = [], dirPath: string): DirectoryNode[] => {
 			const pendingInDir = pendingCreates.filter((p) => {
 				const parentPath = p.path.split("/").slice(0, -1).join("/");
-				// Handle root level pending creates (if any)
 				if (dirPath === "" && !p.path.includes("/")) return true;
 				return parentPath === dirPath;
 			});
@@ -479,14 +403,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 				isPending: true,
 			}));
 
-			// Filter out pending nodes that might duplicate existing server nodes (unlikely but safe)
+			// filter out pending nodes that might duplicate existing server nodes
 			const uniquePending = pendingNodes.filter(
 				(p) => !nodes.some((n) => n.path === p.path),
 			);
 
 			const merged = [...nodes, ...uniquePending];
 
-			// Sort merged list
 			merged.sort((a, b) => {
 				if (a.type !== b.type) {
 					return a.type === "dir" ? -1 : 1;
@@ -499,24 +422,11 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		[pendingCreates, expandedDirs],
 	);
 
-	// Render file tree recursively
 	const renderTree = (
 		nodes: DirectoryNode[],
 		level: number = 0,
 		parentPath: string = "",
 	): React.ReactNode => {
-		// Merge pending files for this level
-		// Note: For the root call, we might need to handle it differently if rootContents are just the allowed dirs.
-		// If rootContents are allowed dirs, they are effectively roots.
-		// Pending files will be inside them.
-		// So we only need to merge when rendering children of a directory.
-		// However, if we support creating files at the very top level (outside allowed dirs?), that would be an issue.
-		// But we assume all creations are within allowed dirs.
-
-		// If level is 0, nodes are the allowed directories. We don't merge pending files here
-		// unless they are siblings of allowed directories (which shouldn't happen).
-		// But inside each allowed directory, we need to merge.
-
 		const nodesToRender = level === 0 ? nodes : mergePending(nodes, parentPath);
 
 		return nodesToRender.map((node) => (
@@ -686,59 +596,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	return (
 		<div className="flex-1 flex flex-col">
-			{/* Action Buttons */}
-			<div className="p-4 border-b border-earth-100">
-				<div className="flex space-x-2">
-					<button
-						onClick={() => {
-							setCreateType("file");
-							setCreatePath("");
-							setShowCreateModal(true);
-						}}
-						className="flex items-center px-3 py-1.5 text-sm bg-earth-50 text-earth-400 rounded-md hover:bg-earth-100 transition-colors"
-						title="Create new file"
-					>
-						<svg
-							className="w-4 h-4 mr-1"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-							/>
-						</svg>
-						File
-					</button>
-					<button
-						onClick={() => {
-							setCreateType("folder");
-							setCreatePath("");
-							setShowCreateModal(true);
-						}}
-						className="flex items-center px-3 py-1.5 text-sm bg-earth-50 text-earth-400 rounded-md hover:bg-earth-100 transition-colors"
-						title="Create new folder"
-					>
-						<svg
-							className="w-4 h-4 mr-1"
-							fill="none"
-							stroke="currentColor"
-							viewBox="0 0 24 24"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-							/>
-						</svg>
-						Folder
-					</button>
-				</div>
-			</div>
 
 			{/* File Tree */}
 			<div className="flex-1 overflow-y-auto p-2">
@@ -872,3 +729,4 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 };
 
 export default FileExplorer;
+

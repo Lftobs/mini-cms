@@ -3,11 +3,12 @@ const requiredEnvVars = [
   'JWT_SECRET_KEY',
   'JWT_REFRESH_SECRET',
   'GITHUB_ID',
-  'GITHUB_SECRET'
+  'GITHUB_SECRET',
+  'BASE_URL'
 ] as const;
 
 // Only validate in production or if explicitly requested to avoid breaking dev flow if .env is missing
-if (import.meta.env.NODE_ENV === 'production') {
+if (import.meta.env.APP_ENV === 'prod') {
   requiredEnvVars.forEach(varName => {
     if (!import.meta.env[varName]) {
       console.warn(`Warning: Missing environment variable: ${varName}`);
@@ -65,7 +66,7 @@ export const config = {
     }
   },
   app: {
-    baseUrl: import.meta.env.BASE_URL || 'http://localhost:4321',
+    baseUrl: import.meta.env.BASE_URL,
   }
 } as const;
 

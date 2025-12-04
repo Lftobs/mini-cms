@@ -1,6 +1,5 @@
 import alpinejs from "@astrojs/alpinejs";
 import db from "@astrojs/db";
-import node from "@astrojs/node";
 import react from "@astrojs/react";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
@@ -9,6 +8,7 @@ import vercel from "@astrojs/vercel";
 
 // https://astro.build/config
 export default defineConfig({
+	site: import.meta.env.APP_ENV === "prod" ? "https://mini-cms-psi.vercel.app" : "http://localhost:4321",
 	output: "server",
 	prefetch: {
 		prefetchAll: true,
@@ -32,7 +32,7 @@ export default defineConfig({
 	vite: {
 		server: {
 			host: true,
-			allowedHosts: ["*"],
+			allowedHosts: ["mini-cms-psi.vercel.app"],
 		},
 
 		plugins: [tailwindcss()],

@@ -5,12 +5,11 @@ const { APP_ENV } = import.meta.env;
 let baseUrl = "http://localhost:4321";
 
 if (APP_ENV === "prod") {
-    if (!import.meta.env.BASE_URL) {
+    if (!import.meta.env.SITE) {
         throw new Error("Missing baseUrl");
     }
-    baseUrl = "https://mini-cms-psi.vercel.app/";
+    baseUrl = import.meta.env.SITE;
 }
-
 
 if (!baseUrl) {
     throw new Error("Missing baseUrl");

@@ -8,7 +8,7 @@ if (APP_ENV === "prod") {
     if (!import.meta.env.BASE_URL) {
         throw new Error("Missing baseUrl");
     }
-    baseUrl = import.meta.env.BASE_URL;
+    baseUrl = "https://mini-cms-psi.vercel.app/";
 }
 
 

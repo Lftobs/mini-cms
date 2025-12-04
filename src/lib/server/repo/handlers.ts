@@ -3,13 +3,13 @@ import { RepoService } from "./service";
 import { RepoRepository } from "./repository";
 import { success, error } from "../shared/responses";
 
-// Initialize service
+
 const repoRepository = new RepoRepository();
 const repoService = new RepoService(repoRepository);
 
 export const listReposHandler = async (c: Context) => {
     try {
-        const { orgInstallationId } = c.req.valid("query" as any);
+        const { orgInstallationId } = c.req.valid("query");
         const repos = await repoService.listRepos(orgInstallationId);
         return c.json(success(repos));
     } catch (err: any) {
@@ -20,17 +20,12 @@ export const listReposHandler = async (c: Context) => {
 export const getDirectoryContentsHandler = async (c: Context) => {
     try {
         const { owner, repo } = c.req.param();
-        const { path } = c.req.valid("query" as any);
-        const projectId = c.req.header("x-project-id"); // Assuming passed via header or middleware context?
-        // Wait, the original code didn't use projectId for getDirectoryContents?
-        // Let's check original implementation.
-        // Original used getProjectOctokit which needs projectId.
-        // But the route didn't have projectId param.
-        // It seems it was mounted under project routes?
-        // Ah, projectRepoRoutes is mounted at /:projectId/repo
-
-        // So we can get projectId from param if mounted correctly.
+        const { path } = c.req.valid("query");
         const mountedProjectId = c.req.param("projectId");
+
+        if (!path || path === '') {
+            return c.json(error("Path is required"), 400);
+        }
 
         if (!mountedProjectId) {
             return c.json(error("Project ID is required"), 400);

@@ -37,10 +37,10 @@ importers:
         version: 5.2.6
       '@hono/node-server':
         specifier: ^1.13.8
-        version: 1.14.1(hono@4.7.6)
+        version: 1.14.1(hono@4.10.3)
       '@hono/zod-validator':
         specifier: ^0.4.3
-        version: 0.4.3(hono@4.7.6)(zod@3.24.2)
+        version: 0.4.3(hono@4.10.3)(zod@3.24.2)
       '@libsql/client':
         specifier: ^0.15.4
         version: 0.15.4
@@ -87,8 +87,8 @@ importers:
         specifier: ^1.8.4
         version: 1.8.4
       hono:
-        specifier: ^4.7.0
-        version: 4.7.6
+        specifier: ^4.10.3
+        version: 4.10.3
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -2576,8 +2576,8 @@ packages:
   hastscript@9.0.1:
     resolution: {integrity: sha512-g7df9rMFX/SPi34tyGCyUBREQoKkapwdY/T04Qn9TDWfHhAYt4/I0gMVirzK5wEzeUqIjEB+LXC/ypb7Aqno5w==}
 
-  hono@4.7.6:
-    resolution: {integrity: sha512-564rVzELU+9BRqqx5k8sT2NFwGD3I3Vifdb6P7CmM6FiarOSY+fDC+6B+k9wcCb86ReoayteZP2ki0cRLN1jbw==}
+  hono@4.10.3:
+    resolution: {integrity: sha512-2LOYWUbnhdxdL8MNbNg9XZig6k+cZXm5IjHn2Aviv7honhBMOHb+jxrKIeJRZJRmn+htUCKhaicxwXuUDlchRA==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@3.0.3:
@@ -4867,13 +4867,13 @@ snapshots:
 
   '@fontsource/space-grotesk@5.2.6': {}
 
-  '@hono/node-server@1.14.1(hono@4.7.6)':
+  '@hono/node-server@1.14.1(hono@4.10.3)':
     dependencies:
-      hono: 4.7.6
+      hono: 4.10.3
 
-  '@hono/zod-validator@0.4.3(hono@4.7.6)(zod@3.24.2)':
+  '@hono/zod-validator@0.4.3(hono@4.10.3)(zod@3.24.2)':
     dependencies:
-      hono: 4.7.6
+      hono: 4.10.3
       zod: 3.24.2
 
   '@img/colour@1.0.0':
@@ -6775,7 +6775,7 @@ snapshots:
       property-information: 7.1.0
       space-separated-tokens: 2.0.2
 
-  hono@4.7.6: {}
+  hono@4.10.3: {}
 
   html-escaper@3.0.3: {}
 

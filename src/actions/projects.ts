@@ -43,6 +43,44 @@ export const projectsActions = {
 			}
 		},
 	}),
+
+	logActivity: defineAction({
+		input: z.object({
+			projectId: z.string(),
+			actionType: z.string(),
+			filePath: z.string(),
+			fileName: z.string(),
+		}),
+		handler: async (input, context) => {
+			const userId = context.locals.currentUser?.id;
+			if (!userId) {
+				throw new ActionError({
+					code: "UNAUTHORIZED",
+					message: "You must be logged in to log project activity.",
+				});
+			}
+
+			try {
+				const projectRepository = new ProjectRepository();
+				const projectService = new ProjectService(projectRepository);
+				await projectService.logActivity(
+					input.projectId,
+					input.actionType,
+					input.filePath,
+					input.fileName,
+				);
+				return {
+					success: true,
+				};
+			} catch (error) {
+				console.error("Action handler error:", error);
+				throw new ActionError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to log project activity.",
+				});
+			}
+		},
+	}),
 	submitChanges: defineAction({
 		input: z.object({
 			modifiedFiles: z.array(z.array(z.string())),

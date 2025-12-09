@@ -4,7 +4,45 @@ import { z } from "astro:schema";
 import api from "@/lib/clients";
 import { userProjects } from "@/utils/cachedFn";
 import { getCurrentUser } from "./orgs";
+import { ProjectService } from "@/lib/server/projects/service";
+import { ProjectRepository } from "@/lib/server/projects/repository";
+
 export const projectsActions = {
+	getProjectActivity: defineAction({
+		input: z.object({
+			projectId: z.string(),
+		}),
+		handler: async ({ projectId }, context) => {
+			const userId = context.locals.currentUser?.id;
+			if (!userId) {
+				throw new ActionError({
+					code: "UNAUTHORIZED",
+					message: "You must be logged in to view project activity.",
+				});
+			}
+
+			try {
+				const projectRepository = new ProjectRepository();
+				const projectService = new ProjectService(projectRepository);
+				const activity = await projectService.getProjectActivity(
+					projectId,
+					1,
+					20,
+					userId,
+				);
+				return {
+					success: true,
+					data: activity,
+				};
+			} catch (error) {
+				console.error("Action handler error:", error);
+				throw new ActionError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to fetch project activity.",
+				});
+			}
+		},
+	}),
 	submitChanges: defineAction({
 		input: z.object({
 			modifiedFiles: z.array(z.array(z.string())),

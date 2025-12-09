@@ -21,7 +21,6 @@ export class ProfileRepository {
         const user = await this.findById(userId);
         if (!user) throw new NotFoundError("User");
 
-        // Validate uniqueness if changing username
         if (data.username && data.username !== user.username) {
             const existingUser = await this.findByUsername(data.username);
             if (existingUser) {
@@ -29,7 +28,6 @@ export class ProfileRepository {
             }
         }
 
-        // Validate uniqueness if changing email
         if (data.email && data.email !== user.email) {
             const existingUser = await this.findByEmail(data.email);
             if (existingUser) {

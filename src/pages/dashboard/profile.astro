@@ -12,7 +12,6 @@ const result = Astro.getActionResult(actions.usersActions.updateProfile);
 const success = result?.data?.success;
 const error = result?.error;
 
-// Use updated user data if available, otherwise fallback to current session user
 const updatedUser = result?.data?.user;
 const displayUser = {
     username: updatedUser?.username ?? currentUser.username,

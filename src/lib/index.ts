@@ -5,7 +5,7 @@ import { orgs } from "./server/organizations";
 import { projectRoutes } from "./server/projects";
 
 const app = new Hono({ strict: false }).basePath("/api").use("*", cors({
-	origin: "https://mini-cms-psi.vercel.app/",
+	origin: import.meta.env.SITE,
 	allowHeaders: ['Content-Type', 'Authorization', 'X-Custom-Header', 'Upgrade-Insecure-Requests'],
 	allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
 	exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],

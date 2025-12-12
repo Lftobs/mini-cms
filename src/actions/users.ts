@@ -8,22 +8,30 @@ export const usersActions = {
 	updateProfile: defineAction({
 		accept: "form",
 		input: z.object({
-			username: z.string().min(3).max(50).optional(),
-			email: z.string().email().optional(),
+			username: z
+				.string()
+				.min(4, "Username must be longer than 3 characters")
+				.max(50)
+				.regex(
+					/^[a-zA-Z-]+$/,
+					"Username can only contain alphabets and hyphens",
+				)
+				.optional(),
+			email: z.string().email("Invalid email address").optional(),
 		}),
 		handler: async ({ username, email }, context) => {
 			const userId = await getCurrentUser(context);
 
-            const repository = new ProfileRepository();
+			const repository = new ProfileRepository();
 
 			try {
 				const updatedUser = await repository.updateUser(
-                    userId,
-                    {
-                        username: username || undefined,
-                        email: email || undefined,
-                    }
-                );
+					userId,
+					{
+						username: username || undefined,
+						email: email || undefined,
+					}
+				);
 
 				return {
 					success: true,
@@ -32,19 +40,19 @@ export const usersActions = {
 			} catch (error) {
 				console.error("Profile update error:", error);
 
-                if (error instanceof ConflictError) {
-                    throw new ActionError({
-                        code: "CONFLICT",
-                        message: error.message,
-                    });
-                }
+				if (error instanceof ConflictError) {
+					throw new ActionError({
+						code: "CONFLICT",
+						message: error.message,
+					});
+				}
 
-                if (error instanceof NotFoundError) {
-                    throw new ActionError({
-                        code: "NOT_FOUND",
-                        message: error.message,
-                    });
-                }
+				if (error instanceof NotFoundError) {
+					throw new ActionError({
+						code: "NOT_FOUND",
+						message: error.message,
+					});
+				}
 
 				throw new ActionError({
 					code: "INTERNAL_SERVER_ERROR",

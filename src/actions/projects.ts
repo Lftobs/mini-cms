@@ -77,7 +77,6 @@ export const projectsActions = {
 						fileSize: input.fileSize,
 					},
 				);
-				console.log(context.clientAddress);
 				return {
 					success: true,
 				};

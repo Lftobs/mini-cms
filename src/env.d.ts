@@ -1,5 +1,5 @@
 /// <reference types="astro/client" />
-import type { User } from "./lib/server/shared/types";
+import type { User } from "./lib/server/webhook/type";
 
 declare global {
 	namespace App {

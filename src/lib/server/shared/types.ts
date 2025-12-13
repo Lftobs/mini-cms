@@ -34,16 +34,3 @@ export interface CreateUserData {
     isGithubEnabled: boolean;
     pfp: string;
 }
-
-export interface ProjectActivity {
-    id: string;
-    project_id: string;
-    action_type: string;
-    file_path: string;
-    file_name: string;
-    contributor_name?: string | null;
-    contributor_email?: string | null;
-    changes_summary?: string | null;
-    file_size?: number | null;
-    created_at: Date;
-}

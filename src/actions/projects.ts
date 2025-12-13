@@ -44,7 +44,7 @@ export const projectsActions = {
 	logActivity: defineAction({
 		input: z.object({
 			projectId: z.string(),
-			actionType: z.string(),
+			actionType: z.enum(["commit"]),
 			filePath: z.string(),
 			fileName: z.string(),
 			fileSize: z.number().optional(),

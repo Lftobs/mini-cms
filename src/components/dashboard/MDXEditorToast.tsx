@@ -296,20 +296,22 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 				if (!response.ok) {
 					throw new Error(`Failed to commit changes: ${response.statusText}`);
 				}
-
-				// Log activity for each committed file
-				allFilesToCommit.forEach(async (file) => {
-					try {
-						await actions.projectsActions.logActivity({
-							projectId,
-							actionType: "commit",
-							filePath: file.path,
-							fileName: file.path.split("/").pop() || "",
-						});
-					} catch (error) {
-						console.error("Failed to log activity:", error);
-					}
-				});
+				await Promise.all(
+					allFilesToCommit.map(async (file) => {
+						try {
+							await actions.projectsActions.logActivity({
+								projectId,
+								actionType: "commit",
+								filePath: file.path,
+								fileName: file.path.split("/").pop() || "",
+								fileSize: getSize(file.content),
+								changesSummary: commitMessage,
+							});
+						} catch (error) {
+							console.error("Failed to log activity:", error);
+						}
+					})
+				);
 
 				const newDrafts = { ...drafts };
 				allFilesToCommit.forEach((file) => {

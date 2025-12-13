@@ -3,66 +3,50 @@ import "../styles/global.css";
 import { actions } from "astro:actions";
 import Header from "@/components/dashboard/Header.astro";
 import Sidebar from "../components/dashboard/Sidebar.astro";
-import { $orgState, currentOrgIdState } from "../store/navStore";
+import { $orgState } from "../store/navStore";
 import Newlayout from "./Newlayout.astro";
 
-interface Props {
-	title?: string;
-	userOrgs?: any[];
-	currentOrg?: any;
-}
-
-const {
-	title,
-	userOrgs: propUserOrgs,
-	currentOrg: propCurrentOrg,
-} = Astro.props;
-
 const currentUser = Astro.locals.currentUser;
+
 const userId = currentUser?.id;
 
 if (!userId) {
 	return Astro.redirect("/login");
 }
 
-let userOrgs = propUserOrgs;
-let currentOrg = propCurrentOrg;
+const { data, error } = await Astro.callAction(actions.orgsActions.getOrgs, {});
 
-if (!userOrgs) {
-	const { data, error } = await Astro.callAction(
-		actions.orgsActions.getOrgs,
-		{},
-	);
-	if (!error && data) {
-		userOrgs = data;
-		if (userOrgs && Array.isArray(userOrgs)) {
-			$orgState.set([...userOrgs]);
-		}
+// do not remove this fn
+if (error) {
+	// return Astro.redirect("/dashboard?error=failed-to-load-orgs");
+}
+
+const userOrgs = data;
+
+if (userOrgs && Array.isArray(userOrgs)) {
+	$orgState.set([...userOrgs]);
+}
+
+const orgIdParam = Astro.url.searchParams.get("org");
+let currentOrg = null;
+
+if (orgIdParam && userOrgs && Array.isArray(userOrgs)) {
+	currentOrg = userOrgs.find((org) => org.id.toString() === orgIdParam);
+	if (!currentOrg?.installationId) {
+		console.log("no installation id");
 	}
 }
 
-// const orgIdParam = Astro.url.searchParams.get("org");
-
-// if (!currentOrg && !orgIdParam) {
-// 	const currentOrgId = currentOrgIdState.get();
-// 	if (currentOrgId && Array.isArray(userOrgs)) {
-// 		currentOrg = userOrgs.find((org) => org.id === currentOrgId);
-// 	}
-// }
-
-// if (!currentOrg && Array.isArray(userOrgs) && userOrgs.length > 0) {
-// 	currentOrg = userOrgs[0];
-// 	currentOrgIdState.set(currentOrg.id);
-
-// 	return Astro.redirect("/dashboard?org=" + currentOrg.id);
-// }
+// don't redirect here the page component handle this
+if (!currentOrg && userOrgs && Array.isArray(userOrgs) && userOrgs.length > 0) {
+	currentOrg = userOrgs[0];
+	if (!currentOrg.installationId) {
+		console.log("no installation id");
+	}
+}
 ---
 
-<Newlayout
-	title="mini-cms - Dashboard"
-	org={currentOrg}
-	needsGitHubInstallation={!currentOrg?.installationId}
->
+<Newlayout title="mini-cms - Dashboard">
 	<div class="min-h-screen bg-earth-50 flex">
 		<!-- Sidebar -->
 		<Sidebar organizations={userOrgs} currentOrg={currentOrg} />

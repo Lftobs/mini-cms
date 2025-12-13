@@ -1,9 +1,15 @@
 import { hc } from "hono/client";
 import type { AppType } from "../lib";
 
-const { PUBLIC_APP_ENV } = import.meta.env;
-let baseUrl = PUBLIC_APP_ENV === "prod" ? import.meta.env.SITE : "http://localhost:4321";
+const { APP_ENV } = import.meta.env;
+let baseUrl = "http://localhost:4321";
 
+if (APP_ENV === "prod") {
+    if (!import.meta.env.SITE) {
+        throw new Error("Missing baseUrl");
+    }
+    baseUrl = import.meta.env.SITE;
+}
 
 if (!baseUrl) {
     throw new Error("Missing baseUrl");

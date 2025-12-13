@@ -4,6 +4,8 @@ import GitHubInstallationAlert from "@/components/dashboard/GitHubInstallationAl
 import DashboardLayout from "@/layouts/DashboardNewLayout.astro";
 import {currentOrgIdState } from "@/store/navStore";
 import { userProjects } from "@/utils/cachedFn";
+import { calculateActivityGrowth } from "@/lib/server/shared/utils";
+import type { ProjectActivity } from "@/lib/server/shared/types";
 
 export const prerender = false;
 
@@ -83,7 +85,7 @@ if (currentOrg && userId) {
 		const projectsData = (await projectsResponse).data;
 		if (projectsData) {
 			const orgProjects = projectsData.filter(
-				(project) => project.org_id === currentOrg.id,
+				(project: { org_id: any; }) => project.org_id === currentOrg.id,
 			);
 			hasMoreProjects = orgProjects.length > 6;
 			// display first 6 - TODO: implement pagination or a view all projects button in the required component
@@ -93,6 +95,26 @@ if (currentOrg && userId) {
 		console.error("Error fetching projects:", error);
 	}
 }
+
+let allProjectActivities: ProjectActivity[] = [];
+if (projects.length > 0) {
+	try {
+		const activityPromises = projects.map((p) =>
+			Astro.callAction(actions.projectsActions.getProjectActivity, {
+				projectId: p.id,
+			}),
+		);
+		const activityResults = await Promise.all(activityPromises);
+		allProjectActivities = activityResults
+			.map((res) => res.data)
+			.flat()
+			.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+	} catch (error) {
+		console.error("Error fetching project activities:", error);
+	}
+}
+
+const { growth: activityGrowth, sign: growthSign } = calculateActivityGrowth(allProjectActivities);
 ---
 
 <DashboardLayout userOrgs={userOrgs} currentOrg={currentOrg}>
@@ -173,7 +195,7 @@ if (currentOrg && userId) {
 										Published Content
 									</p>
 									<p class="text-2xl font-semibold text-earth-400">
-										0
+										{allProjectActivities?.length}
 									</p>
 								</div>
 							</div>
@@ -200,8 +222,8 @@ if (currentOrg && userId) {
 									<p class="text-sm font-medium text-earth-200">
 										This Month
 									</p>
-									<p class="text-2xl font-semibold text-earth-400">
-										+0%
+									<p class={`text-2xl font-semibold ${activityGrowth >= 0 ? "text-green-600" : "text-red-600"}`}>
+										{growthSign}{activityGrowth}%
 									</p>
 								</div>
 							</div>
@@ -217,9 +239,10 @@ if (currentOrg && userId) {
 							<h2 class="text-lg font-semibold text-earth-400">
 								Projects & Activity
 							</h2>
-							<div class="flex space-x-1">
-								<button
-									class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
+							<div class="flex items-center space-x-4">
+								<div class="flex space-x-1 bg-earth-50 p-1 rounded-lg">
+									<button
+										class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
 									:class="activeTab === 'projects' ? 'bg-earth-50 text-earth-400' : ''"
 									@click="activeTab = 'projects'"
 								>
@@ -227,12 +250,34 @@ if (currentOrg && userId) {
 								</button>
 								<button
 									class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
-									:class="activeTab === 'activity' ? 'bg-earth-50 text-earth-400' : ''"
+									:class="activeTab === 'activity' ? 'bg-white shadow-sm text-earth-500' : 'text-earth-400 hover:text-earth-500'"
 									@click="activeTab = 'activity'"
 								>
 									Activity
 								</button>
 							</div>
+							<button
+								x-show="activeTab === 'activity'"
+								@click="window.location.reload()"
+								class="p-2 text-earth-400 rounded-full hover:bg-earth-100 transition-colors"
+								title="Refresh activities"
+							>
+								<svg
+									class="w-4 h-4"
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke-width="1.5"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.18-3.185m-3.181 0l-3.182-3.182m0 0a8.25 8.25 0 00-11.664 0l-3.18 3.185"
+									></path>
+								</svg>
+							</button>
+						</div>
 						</div>
 
 						{/* Projects View */}
@@ -349,43 +394,81 @@ if (currentOrg && userId) {
 						<div
 							x-show="activeTab === 'activity'"
 							x-transition
+							x-data={`{
+								activities: ${JSON.stringify(allProjectActivities)},
+								getRelativeTime(dateString) {
+									const date = new Date(dateString);
+									const now = new Date();
+									const diff = Math.round((now - date) / 1000); // seconds
+									if (diff < 60) return diff + 's ago';
+									if (diff < 3600) return Math.round(diff / 60) + 'mins ago';
+									if (diff < 86400) return Math.round(diff / 3600) + 'hrs ago';
+									return Math.round(diff / 86400) + 'days ago';
+								}
+							}`}
 							class="space-y-4"
 						>
-							<div class="flex items-center space-x-3">
-								<div class="w-2 h-2 bg-earth-400 rounded-full"></div>
-								<div class="flex-1">
-									<p class="text-sm text-earth-300">
-										Updated project "Company Blog" content
+							<template x-if="activities.length > 0">
+								<div class="space-y-4">
+									<template
+										x-for="activity in activities"
+										:key="activity.id"
+									>
+										<div class="flex items-center space-x-3">
+											<div class="w-2 h-2 bg-earth-400 rounded-full">
+											</div>
+											<div class="flex-1">
+												<div class="flex items-center flex-wrap gap-1 text-sm text-earth-300">
+													<span x-text="activity.action_type"></span>
+													<span>on</span>
+													<span class="px-2 py-0.5 bg-yellow-100 font-semibold text-earth-500 rounded-full text-xs font-medium" x-text="activity.file_name"></span>
+													<template x-if="activity.contributor_name">
+														<div class="flex items-center gap-1">
+															<span>by</span>
+															<span class="px-2 py-0.5 bg-yellow-100 font-semibold text-earth-500 rounded-full text-xs font-medium" x-text="activity.contributor_name"></span>
+														</div>
+													</template>
+												</div>
+												<p
+													class="text-xs text-earth-200"
+													x-text="getRelativeTime(activity.created_at)"
+												>
+												</p>
+											</div>
+										</div>
+									</template>
+								</div>
+							</template>
+							<template x-if="activities.length === 0">
+								<div class="text-center py-8">
+									<svg
+										class="w-12 h-12 text-earth-200 mx-auto mb-4"
+										fill="none"
+										stroke="currentColor"
+										viewBox="0 0 24 24"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+										></path>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+										></path>
+									</svg>
+									<p class="text-earth-300 mb-2">
+										No recent activity
 									</p>
-									<p class="text-xs text-earth-200">
-										2 hours ago
+									<p class="text-sm text-earth-200">
+										Recent project activities will appear
+										here.
 									</p>
 								</div>
-							</div>
-							<div class="flex items-center space-x-3">
-								<div class="w-2 h-2 bg-earth-400 rounded-full"></div>
-								<div class="flex-1">
-									<p class="text-sm text-earth-300">
-										Published new article "Getting Started
-										with MDX"
-									</p>
-									<p class="text-xs text-earth-200">
-										5 hours ago
-									</p>
-								</div>
-							</div>
-							<div class="flex items-center space-x-3">
-								<div class="w-2 h-2 bg-earth-400 rounded-full"></div>
-								<div class="flex-1">
-									<p class="text-sm text-earth-300">
-										Connected GitHub repository
-										"portfolio-site"
-									</p>
-									<p class="text-xs text-earth-200">
-										1 day ago
-									</p>
-								</div>
-							</div>
+							</template>
 						</div>
 					</div>
 

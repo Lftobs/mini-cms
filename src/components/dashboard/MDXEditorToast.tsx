@@ -2,6 +2,7 @@ import { Editor } from "@toast-ui/react-editor";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import "@toast-ui/editor/dist/toastui-editor.css";
+import { actions } from "astro:actions";
 import api from "@/lib/clients";
 import CommitPanel from "./CommitPanel.tsx";
 import FileExplorer from "./FileExplorer.tsx";
@@ -296,6 +297,20 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 					throw new Error(`Failed to commit changes: ${response.statusText}`);
 				}
 
+				allFilesToCommit.forEach(async (file) => {
+					try {
+						await actions.projectsActions.logActivity({
+							projectId,
+							actionType: "commit",
+							filePath: file.path,
+							fileName: file.path.split("/").pop() || "",
+							fileSize: getSize(file.content),
+							changesSummary: commitMessage,
+						});
+					} catch (error) {
+						console.error("Failed to log activity:", error);
+					}
+				});
 
 				const newDrafts = { ...drafts };
 				allFilesToCommit.forEach((file) => {

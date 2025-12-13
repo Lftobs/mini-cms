@@ -30,10 +30,7 @@ export const projectsActions = {
 					20,
 					userId,
 				);
-				return {
-					success: true,
-					data: activity,
-				};
+				return activity;
 			} catch (error) {
 				console.error("Action handler error:", error);
 				throw new ActionError({
@@ -50,9 +47,12 @@ export const projectsActions = {
 			actionType: z.string(),
 			filePath: z.string(),
 			fileName: z.string(),
+			fileSize: z.number().optional(),
+			changesSummary: z.string().optional(),
 		}),
 		handler: async (input, context) => {
 			const userId = context.locals.currentUser?.id;
+			const user = context.locals.currentUser;
 			if (!userId) {
 				throw new ActionError({
 					code: "UNAUTHORIZED",
@@ -68,7 +68,16 @@ export const projectsActions = {
 					input.actionType,
 					input.filePath,
 					input.fileName,
+					{
+						name: user?.githubName || user?.username,
+						email: user?.email,
+					},
+					{
+						changesSummary: input.changesSummary,
+						fileSize: input.fileSize,
+					},
 				);
+				console.log(context.clientAddress);
 				return {
 					success: true,
 				};

@@ -137,7 +137,12 @@ export class ProjectRepository {
         pr_status?: string;
         file_size?: number;
     }) {
-        await db.insert(ProjectActivity).values(data);
+        await db.insert(ProjectActivity).values(
+            withId({
+                ...data,
+                created_at: new Date(),
+            })
+        );
     }
 
     // Invites & Members

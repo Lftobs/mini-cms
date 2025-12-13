@@ -12,6 +12,8 @@ import {
 import DashboardLayout from "@/layouts/DashboardNewLayout.astro";
 import { $orgState, currentOrgIdState } from "@/store/navStore";
 import { userProjects } from "@/utils/cachedFn";
+import { calculateActivityGrowth } from "@/lib/server/shared/utils";
+import type { ProjectActivity } from "@/lib/server/shared/types";
 
 export const prerender = false;
 
@@ -87,7 +89,7 @@ if (currentOrg && userId) {
 		const projectsData = (await projectsResponse).data;
 		if (projectsData) {
 			const orgProjects = projectsData.filter(
-				(project) => project.org_id === currentOrg.id,
+				(project: { org_id: any; }) => project.org_id === currentOrg.id,
 			);
 			hasMoreProjects = orgProjects.length > 6;
 			// display first 6 - TODO: implement pagination or a view all projects button in the required component
@@ -98,7 +100,7 @@ if (currentOrg && userId) {
 	}
 }
 
-let allProjectActivities = [];
+let allProjectActivities: ProjectActivity[] = [];
 if (projects.length > 0) {
 	try {
 		const activityPromises = projects.map((p) =>
@@ -115,6 +117,8 @@ if (projects.length > 0) {
 		console.error("Error fetching project activities:", error);
 	}
 }
+
+const { growth: activityGrowth, sign: growthSign } = calculateActivityGrowth(allProjectActivities);
 ---
 
 <DashboardLayout>
@@ -332,7 +336,7 @@ if (projects.length > 0) {
 										Published Content
 									</p>
 									<p class="text-2xl font-semibold text-earth-400">
-										0
+										{allProjectActivities?.length}
 									</p>
 								</div>
 							</div>
@@ -359,8 +363,8 @@ if (projects.length > 0) {
 									<p class="text-sm font-medium text-earth-200">
 										This Month
 									</p>
-									<p class="text-2xl font-semibold text-earth-400">
-										+0%
+									<p class={`text-2xl font-semibold ${activityGrowth >= 0 ? "text-green-600" : "text-red-600"}`}>
+										{growthSign}{activityGrowth}%
 									</p>
 								</div>
 							</div>
@@ -532,17 +536,17 @@ if (projects.length > 0) {
 							x-show="activeTab === 'activity'"
 							x-transition
 							x-data={`{
-                activities: ${JSON.stringify(allProjectActivities)},
-                getRelativeTime(dateString) {
-                    const date = new Date(dateString);
-                    const now = new Date();
-                    const diff = Math.round((now - date) / 1000); // seconds
-                    if (diff < 60) return diff + 's ago';
-                    if (diff < 3600) return Math.round(diff / 60) + 'm ago';
-                    if (diff < 86400) return Math.round(diff / 3600) + 'h ago';
-                    return Math.round(diff / 86400) + 'd ago';
-                }
-            }`}
+								activities: ${JSON.stringify(allProjectActivities)},
+								getRelativeTime(dateString) {
+									const date = new Date(dateString);
+									const now = new Date();
+									const diff = Math.round((now - date) / 1000); // seconds
+									if (diff < 60) return diff + 's ago';
+									if (diff < 3600) return Math.round(diff / 60) + 'mins ago';
+									if (diff < 86400) return Math.round(diff / 3600) + 'hrs ago';
+									return Math.round(diff / 86400) + 'days ago';
+								}
+							}`}
 							class="space-y-4"
 						>
 							<template x-if="activities.length > 0">
@@ -555,11 +559,17 @@ if (projects.length > 0) {
 											<div class="w-2 h-2 bg-earth-400 rounded-full">
 											</div>
 											<div class="flex-1">
-												<p
-													class="text-sm text-earth-300"
-													x-text="`${activity.action_type} on file ${activity.file_name}`"
-												>
-												</p>
+												<div class="flex items-center flex-wrap gap-1 text-sm text-earth-300">
+													<span x-text="activity.action_type"></span>
+													<span>on</span>
+													<span class="px-2 py-0.5 bg-yellow-100 font-semibold text-earth-500 rounded-full text-xs font-medium" x-text="activity.file_name"></span>
+													<template x-if="activity.contributor_name">
+														<div class="flex items-center gap-1">
+															<span>by</span>
+															<span class="px-2 py-0.5 bg-yellow-100 font-semibold text-earth-500 rounded-full text-xs font-medium" x-text="activity.contributor_name"></span>
+														</div>
+													</template>
+												</div>
 												<p
 													class="text-xs text-earth-200"
 													x-text="getRelativeTime(activity.created_at)"

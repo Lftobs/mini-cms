@@ -8,7 +8,7 @@ import vercel from "@astrojs/vercel";
 
 // https://astro.build/config
 export default defineConfig({
-	site: import.meta.env.APP_ENV === "prod" ? "https://mini-cms-psi.vercel.app" : "http://localhost:4321",
+	site: import.meta.env.PUBLIC_APP_ENV === "prod" ? "https://mini-cms-psi.vercel.app" : "http://localhost:4321",
 	output: "server",
 	prefetch: {
 		prefetchAll: true,

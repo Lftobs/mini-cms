@@ -18,15 +18,10 @@ export const userProjects = createCachedFetcher(
 );
 
 export const userOrgs = createCachedFetcher("userOrgs", async (userId: string) => {
-	try {
-		const response = await api.orgs.$get({
-			query: { userId: userId },
-		});
-		if (!response.ok) throw new Error("Failed to fetch organizations");
-		return response.json();
-	} catch (error) {
-		console.error("[Fetcher] Error fetching organizations:", error);
-		return;
-	}
+	const response = await api.orgs.$get({
+		query: { userId: userId },
+	});
+	if (!response.ok) throw new Error("Failed to fetch organizations");
+	return response.json();
 });
 

@@ -1,10 +1,8 @@
 ---
 import CTASection from "./CTASection.astro";
-import DocumentationSection from "./DocumentationSection.astro";
 import FAQSection from "./FAQSection.astro";
 import FooterSection from "./FooterSection.astro";
-import PricingSection from "./PricingSection.astro";
-import TestimonialsSection from "./TestimonialsSection.astro";
+import "@/styles/global.css";
 ---
 
 <div
@@ -50,7 +48,10 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 	@beforeunload="mounted = false; clearInterval(interval)"
 	class="w-full min-h-screen relative bg-[#F7F5F3] overflow-x-hidden flex flex-col justify-start items-center"
 >
-	<div class="relative flex flex-col justify-start items-center w-full">
+	<!-- Gradient Mesh Background -->
+	<div class="fixed inset-0 gradient-mesh pointer-events-none z-0"></div>
+
+	<div class="relative flex flex-col justify-start items-center w-full z-10">
 		<!-- Main container with proper margins -->
 		<div
 			class="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] relative flex flex-col justify-start items-start min-h-screen"
@@ -80,19 +81,40 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 					</div>
 
 					<div
-						class="w-full max-w-[calc(100%-32px)] sm:max-w-[calc(100%-48px)] md:max-w-[calc(100%-64px)] lg:max-w-[700px] lg:w-[700px] h-10 sm:h-11 md:h-12 py-1.5 sm:py-2 px-3 sm:px-4 md:px-4 pr-2 sm:pr-3 bg-[#F7F5F3] backdrop-blur-sm shadow-[0px_0px_0px_2px_white] overflow-hidden rounded-[50px] flex justify-between items-center relative z-30"
+						class="w-full max-w-[calc(100%-32px)] sm:max-w-[calc(100%-48px)] md:max-w-[calc(100%-64px)] lg:max-w-[700px] lg:w-[700px] h-10 sm:h-11 md:h-12 py-1.5 sm:py-2 px-3 sm:px-4 md:px-4 pr-2 sm:pr-3 glass-nav overflow-hidden rounded-[50px] flex justify-between items-center relative z-30"
 					>
 						<div class="flex justify-center items-center">
 							<div
-								class="flex flex-col justify-center text-[#2F3037] text-sm sm:text-base md:text-lg lg:text-xl font-medium leading-5 font-sans"
+								class="flex flex-row items-center gap-2 text-[#2F3037] text-sm sm:text-base md:text-lg lg:text-xl font-medium leading-5 font-sans group cursor-pointer"
 							>
+								<svg
+									width="20"
+									height="20"
+									viewBox="0 0 24 24"
+									fill="none"
+									xmlns="http://www.w3.org/2000/svg"
+									class="text-earth-accent transition-transform duration-500 group-hover:rotate-180"
+								>
+									<path
+										d="M21 16V8.00002C20.9996 7.22382 20.6994 6.47852 20.163 5.92202C19.6266 5.36552 18.894 4.03802 18.117 4.03802H5.883C5.106 4.03802 4.37339 5.36552 3.83698 5.92202C3.30056 6.47852 3.00036 7.22382 3 8.00002V16C3.00036 16.7762 3.30056 17.5215 3.83698 18.078C4.37339 18.6345 5.106 18.962 5.883 18.962H18.117C18.894 18.962 19.6266 18.6345 20.163 18.078C20.6994 17.5215 20.9996 16.7762 21 16Z"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"></path>
+									<path
+										d="M12 12H12.01"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"></path>
+								</svg>
 								mini-cms
 							</div>
 							<div
-								class="pl-3 sm:pl-4 md:pl-5 lg:pl-5 flex justify-start items-start hidden sm:flex flex-row gap-2 sm:gap-3 md:gap-4 lg:gap-4"
+								class="pl-3 sm:pl-4 md:pl-5 lg:pl-5 flex justify-start items-start hidden sm:flex flex-row gap-1"
 							>
 								<div
-									class="flex justify-start items-center cursor-pointer"
+									class="flex justify-start items-center cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/50 transition-all duration-200"
 									@click="scrollToSection('docs')"
 								>
 									<div
@@ -102,7 +124,7 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 									</div>
 								</div>
 								<div
-									class="flex justify-start items-center cursor-pointer"
+									class="flex justify-start items-center cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/50 transition-all duration-200"
 									@click="scrollToSection('pricing')"
 								>
 									<div
@@ -112,7 +134,7 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 									</div>
 								</div>
 								<div
-									class="flex justify-start items-center cursor-pointer"
+									class="flex justify-start items-center cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/50 transition-all duration-200"
 									@click="scrollToSection('docs')"
 								>
 									<div
@@ -127,7 +149,7 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 							class="h-6 sm:h-7 md:h-8 flex justify-start items-start gap-2 sm:gap-3"
 						>
 							<div
-								class="px-2 sm:px-3 md:px-[14px] py-1 sm:py-[6px] bg-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] overflow-hidden rounded-full flex justify-center items-center"
+								class="px-2 sm:px-3 md:px-[14px] py-1 sm:py-[6px] bg-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] overflow-hidden rounded-full flex justify-center items-center hover:shadow-md transition-all duration-200 border border-transparent hover:border-earth-accent/20 hover:scale-105 active:scale-95"
 							>
 								<a
 									href="/auth/login"
@@ -151,11 +173,14 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 							class="self-stretch rounded-[3px] flex flex-col justify-center items-center gap-4 sm:gap-5 md:gap-6 lg:gap-8"
 						>
 							<div
-								class="w-full max-w-[748.71px] lg:w-[748.71px] text-center flex justify-center flex-col text-[#37322F] text-[24px] xs:text-[28px] sm:text-[36px] md:text-[52px] lg:text-[80px] font-normal leading-[1.1] sm:leading-[1.15] md:leading-[1.2] lg:leading-24 font-sans px-2 sm:px-4 md:px-0"
+								class="w-full max-w-[748.71px] lg:w-[748.71px] text-center flex justify-center flex-col text-earth-400 text-[24px] xs:text-[28px] sm:text-[36px] md:text-[52px] lg:text-[80px] font-normal leading-[1.1] sm:leading-[1.15] md:leading-[1.2] lg:leading-24 font-sans px-2 sm:px-4 md:px-0 animate-fade-in-up"
 							>
 								Manage your content
 								<br />
-								directly in GitHub
+								<span
+									class="bg-gradient-to-r from-earth-200 to-earth-500 bg-clip-text text-transparent"
+									>directly in GitHub</span
+								>
 							</div>
 							<div
 								class="w-full max-w-[506.08px] lg:w-[506.08px] text-center flex justify-center flex-col text-[rgba(55,50,47,0.80)] sm:text-lg md:text-xl leading-[1.4] sm:leading-[1.45] md:leading-[1.5] lg:leading-7 font-sans px-2 sm:px-4 md:px-0 lg:text-lg font-medium text-sm"
@@ -175,13 +200,9 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 							class="backdrop-blur-[8.25px] flex justify-start items-center gap-4"
 						>
 							<div
-								class="h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-[#37322F] shadow-[0px_0px_0px_2.5px_rgba(255,255,255,0.08)_inset] overflow-hidden rounded-full flex justify-center items-center cursor-pointer"
+								class="h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-gradient-to-r from-earth-200 to-earth-500 overflow-hidden rounded-full flex justify-center items-center cursor-pointer transition-transform duration-300 hover:scale-105"
 								@click="scrollToSection('pricing')"
 							>
-								<div
-									class="w-20 sm:w-24 md:w-28 lg:w-44 h-[41px] absolute left-0 top-[-0.5px] bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply"
-								>
-								</div>
 								<div
 									class="flex flex-col justify-center text-white text-sm sm:text-base md:text-[15px] font-medium leading-5 font-sans"
 								>
@@ -195,7 +216,7 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 						class="w-full max-w-[900px] lg:w-[900px] pt-2 sm:pt-4 pb-6 sm:pb-8 md:pb-10 px-2 sm:px-4 md:px-6 lg:px-11 flex flex-col justify-center items-center gap-2 relative z-5 my-8 sm:my-12 md:my-16 lg:my-16 mb-0 lg:pb-0"
 					>
 						<div
-							class="w-full max-w-[900px] lg:w-[900px] h-[150px] sm:h-[280px] md:h-[450px] lg:h-[605px] bg-white shadow-[0px_0px_0px_0.9056603908538818px_rgba(0,0,0,0.08)] overflow-hidden rounded-[6px] sm:rounded-[8px] lg:rounded-[9.06px] flex flex-col justify-start items-start"
+							class="w-full max-w-[900px] lg:w-[900px] h-[150px] sm:h-[280px] md:h-[450px] lg:h-[605px] glass-card floating-card overflow-hidden rounded-[12px] sm:rounded-[16px] lg:rounded-[20px] flex flex-col justify-start items-start"
 						>
 							<!-- Dashboard Content -->
 							<div
@@ -275,7 +296,7 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 						>
 							<!-- Left decorative pattern -->
 							<div
-								class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start"
+								class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start animate-pulse"
 							>
 								<template x-for="i in 50">
 									<div
@@ -292,15 +313,15 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 							<!-- Feature Cards -->
 							<div
 								@click="handleCardClick(0)"
-								:class="activeCard === 0 ? 'bg-white shadow-[0px_0px_0px_0.75px_#E0DEDB_inset]' : 'border-l-0 border-r-0 md:border border-[#E0DEDB]/80'"
-								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0"
+								:class="activeCard === 0 ? 'glass-card gradient-border' : 'bg-white/50 hover:bg-white/70 border border-[#E0DEDB]/50'"
+								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0 transition-all duration-300 rounded-lg md:rounded-none floating-card"
 							>
 								<div
 									x-show="activeCard === 0"
 									class="absolute top-0 left-0 w-full h-0.5 bg-[rgba(50,45,43,0.08)]"
 								>
 									<div
-										class="h-full bg-[#322D2B] transition-all duration-100 ease-linear"
+										class="h-full bg-earth-accent transition-all duration-100 ease-linear"
 										:style="`width: ${progress}%`"
 									>
 									</div>
@@ -321,15 +342,15 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 							</div>
 							<div
 								@click="handleCardClick(1)"
-								:class="activeCard === 1 ? 'bg-white shadow-[0px_0px_0px_0.75px_#E0DEDB_inset]' : 'border-l-0 border-r-0 md:border border-[#E0DEDB]/80'"
-								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0"
+								:class="activeCard === 1 ? 'glass-card gradient-border' : 'bg-white/50 hover:bg-white/70 border border-[#E0DEDB]/50'"
+								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0 transition-all duration-300 rounded-lg md:rounded-none floating-card"
 							>
 								<div
 									x-show="activeCard === 1"
 									class="absolute top-0 left-0 w-full h-0.5 bg-[rgba(50,45,43,0.08)]"
 								>
 									<div
-										class="h-full bg-[#322D2B] transition-all duration-100 ease-linear"
+										class="h-full bg-earth-accent transition-all duration-100 ease-linear"
 										:style="`width: ${progress}%`"
 									>
 									</div>
@@ -349,15 +370,15 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 							</div>
 							<div
 								@click="handleCardClick(2)"
-								:class="activeCard === 2 ? 'bg-white shadow-[0px_0px_0px_0.75px_#E0DEDB_inset]' : 'border-l-0 border-r-0 md:border border-[#E0DEDB]/80'"
-								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0"
+								:class="activeCard === 2 ? 'glass-card gradient-border' : 'bg-white/50 hover:bg-white/70 border border-[#E0DEDB]/50'"
+								class="w-full md:flex-1 self-stretch px-6 py-5 overflow-hidden flex flex-col justify-start items-start gap-2 cursor-pointer relative border-b md:border-b-0 last:border-b-0 transition-all duration-300 rounded-lg md:rounded-none floating-card"
 							>
 								<div
 									x-show="activeCard === 2"
 									class="absolute top-0 left-0 w-full h-0.5 bg-[rgba(50,45,43,0.08)]"
 								>
 									<div
-										class="h-full bg-[#322D2B] transition-all duration-100 ease-linear"
+										class="h-full bg-earth-accent transition-all duration-100 ease-linear"
 										:style="`width: ${progress}%`"
 									>
 									</div>
@@ -382,7 +403,7 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 						>
 							<!-- Right decorative pattern -->
 							<div
-								class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start"
+								class="w-[120px] sm:w-[140px] md:w-[162px] left-[-40px] sm:left-[-50px] md:left-[-58px] top-[-120px] absolute flex flex-col justify-start items-start animate-pulse"
 							>
 								<template x-for="i in 50">
 									<div
@@ -394,25 +415,15 @@ import TestimonialsSection from "./TestimonialsSection.astro";
 						</div>
 					</div>
 
-					<!-- Social Proof Section -->
+					<!-- <DocumentationSection />
 
-					<!-- Documentation Section -->
-					<DocumentationSection />
-
-					<!-- Testimonials Section -->
 					<TestimonialsSection />
 
-					<!-- Pricing Section -->
-					<PricingSection />
+					<PricingSection /> -->
 
-					<!-- FAQ Section -->
 					<FAQSection />
-
-					<!-- CTA Section -->
 					<CTASection />
 
-					<!-- Footer Section -->
-					<!-- Placeholder for FooterSection -->
 					<FooterSection />
 				</div>
 			</div>

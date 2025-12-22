@@ -2,7 +2,7 @@
 import { actions } from "astro:actions";
 import GitHubInstallationAlert from "@/components/dashboard/GitHubInstallationAlert.astro";
 import DashboardLayout from "@/layouts/DashboardNewLayout.astro";
-import {currentOrgIdState } from "@/store/navStore";
+import {$orgState, currentOrgIdState } from "@/store/navStore";
 import { userProjects } from "@/utils/cachedFn";
 import { calculateActivityGrowth } from "@/lib/server/shared/utils";
 import type { ProjectActivity } from "@/lib/server/shared/types";
@@ -47,6 +47,7 @@ let userOrgs = [];
 const { data, error } = await Astro.callAction(actions.orgsActions.getOrgs, {});
 if (!error && data) {
 	userOrgs = data;
+	$orgState.set(data)
 }
 
 const orgIdParam = Astro.url.searchParams.get("org");

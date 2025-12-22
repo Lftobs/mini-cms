@@ -4,7 +4,11 @@ import { auth } from "./server/auth";
 import { orgs } from "./server/organizations";
 import { projectRoutes } from "./server/projects";
 
-const app = new Hono({ strict: false }).basePath("/api").use("*", cors({
+import { authMiddleware } from "./server/shared/middleware";
+
+const app = new Hono({ strict: false }).basePath("/api");
+
+app.use("*", cors({
 	origin: import.meta.env.SITE,
 	allowHeaders: ['Content-Type', 'Authorization', 'X-Custom-Header', 'Upgrade-Insecure-Requests'],
 	allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
@@ -13,7 +17,8 @@ const app = new Hono({ strict: false }).basePath("/api").use("*", cors({
 	credentials: true,
 }));
 
-app.get("/hi", (c) => c.json({ message: "server is healthy" }));
+app.use("*", authMiddleware);
+
 
 const routes = app
 	.route("/projects", projectRoutes)
@@ -28,6 +33,3 @@ const routes = app
 
 export default app;
 export type AppType = typeof routes;
-
-// export const client = hc("http://localhost:8000");
-// export type ClientType = typeof client;

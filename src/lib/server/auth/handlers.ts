@@ -16,44 +16,6 @@ const authService = new AuthService(authRepository, orgService);
 
 
 
-export const loginHandler = async (c: Context) => {
-    const next = c.req.query("next") || "/dashboard";
-    const redirect = (next.startsWith('/') && !next.startsWith('//')) ? next : "/dashboard";
-
-    try {
-        const authorizeUrl = authService.buildGithubAuthUrl(redirect, `${new URL(c.req.url).origin}`);
-        return c.redirect(authorizeUrl);
-    } catch (err) {
-        console.error('Login handler error:', err);
-        return c.json(error('Failed to initiate login'), 500);
-    }
-};
-
-export const githubCallbackHandler = async (c: Context) => {
-    const { code, state } = c.req.valid("query");
-
-    try {
-        const result = await authService.handleGithubCallback(code, state);
-
-        setCookie(c, config.auth.cookies.accessToken.name, result.tokens.accessToken, config.auth.cookies.accessToken);
-        setCookie(c, config.auth.cookies.refreshToken.name, result.tokens.refreshToken, config.auth.cookies.refreshToken);
-
-        // if (result.githubToken) {
-        //     setCookie(c, 'gh_access_token', result.githubToken, {
-        //         httpOnly: true,
-        //         secure: config.auth.cookies.accessToken.secure,
-        //         maxAge: config.auth.cookies.accessToken.maxAge,
-        //         path: "/",
-        //     });
-        // }
-
-        return c.redirect(result.redirectUrl);
-    } catch (err) {
-        console.error('GitHub callback error:', err);
-        return c.redirect('/auth/login?error=callback_failed');
-    }
-};
-
 export const googleCallbackHandler = async (c: Context) => {
     const { code, state } = c.req.valid("query");
 
@@ -112,17 +74,14 @@ export const logoutHandler = async (c: Context) => {
     const accessToken = getCookie(c, config.auth.cookies.accessToken.name);
     const refreshToken = getCookie(c, config.auth.cookies.refreshToken.name);
 
-    // Even if tokens are missing, we still clear the cookies
     if (accessToken && refreshToken) {
         try {
             await authService.logoutUser(accessToken, refreshToken);
         } catch (err) {
             // console.error('Logout error (blacklist):', err);
-            // Continue with cookie clearing even if blacklist fails
         }
     }
 
-    // Clear authentication cookies
     setCookie(c, config.auth.cookies.accessToken.name, '', { maxAge: 0, path: '/' });
     setCookie(c, config.auth.cookies.refreshToken.name, '', { maxAge: 0, path: '/' });
     setCookie(c, 'gh_access_token', '', { maxAge: 0, path: '/' });

@@ -45,16 +45,11 @@ export class AuthRepository {
     }
 
     async findOrCreateUser(userData: CreateUserData): Promise<[User, boolean]> {
-        // if (userData.email) {
-        //     const existingByEmail = await this.findByEmail(userData.email);
-        //     if (existingByEmail) {
-        //         return await this.linkProviderToUser(existingByEmail, userData);
-        //     }
-        // }
-
-        if (userData.provider === 'github' && userData.githubName) {
-            const existingByGithub = await this.findByGithubName(userData.githubName);
-            if (existingByGithub) return [existingByGithub, true];
+        if (userData.email) {
+            const existingByEmail = await this.findByEmail(userData.email);
+            if (existingByEmail) {
+                return [existingByEmail, true];
+            }
         }
 
         if (userData.provider === 'google' && userData.googleId) {
@@ -89,31 +84,6 @@ export class AuthRepository {
             console.error('Database error in createUser:', error);
             throw new ConflictError('Failed to create user account');
         }
-    }
-
-    private async linkProviderToUser(user: User, providerData: CreateUserData): Promise<User> {
-        const updates: any = {};
-
-        if (providerData.provider === 'github' && !user.githubName && providerData.githubName) {
-            updates.githubName = providerData.githubName;
-        }
-
-        if (providerData.provider === 'google' && !user.googleId && providerData.googleId) {
-            updates.googleId = providerData.googleId;
-        }
-
-        if (Object.keys(updates).length > 0) {
-            try {
-                await db.update(Users).set(updates).where(eq(Users.id, user.id));
-                const updatedUser = await this.findById(user.id);
-                return updatedUser || user;
-            } catch (error) {
-                console.error('Database error in linkProviderToUser:', error);
-                return user;
-            }
-        }
-
-        return user;
     }
 
     async updateUser(id: string, updates: Partial<User>): Promise<User> {

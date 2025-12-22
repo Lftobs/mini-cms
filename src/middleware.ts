@@ -86,7 +86,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	return context.redirect(loginUrl);
 });
 
-const publicRoutes = ["/auth/login", "/api", "/", "/_astro", "/favicon.ico"];
+const publicRoutes = ["/auth/login", "/api", "/", "/_astro", "/favicon.ico", "/sitemap-index.xml", "/sitemap-0.xml", "/sitemap.xml"];
 
 const isPublicRoute = (pathname: string) => {
 	return publicRoutes.some((route) => {

@@ -1,5 +1,5 @@
 import { OrganizationRepository } from "./repository";
-import { NotFoundError, ConflictError, ValidationError } from "../shared/errors";
+import { NotFoundError, ConflictError, ValidationError, ForbiddenError } from "../shared/errors";
 
 export class OrganizationService {
     constructor(private repository: OrganizationRepository) { }
@@ -9,10 +9,6 @@ export class OrganizationService {
             throw new ValidationError("User ID is required");
         }
         const orgs = await this.repository.getUserOrgs(userId);
-
-        if (orgs.length === 0) {
-            throw new NotFoundError("No Orgs found");
-        }
 
         return orgs;
     }
@@ -64,7 +60,27 @@ export class OrganizationService {
         if (!orgId) throw new ValidationError("Organization ID is required");
         if (!installationId) throw new ValidationError("Installation ID is required");
 
-        return await this.repository.addInstallationId(orgId, installationId, userId);
+        const result = await this.repository.addInstallationId(orgId, installationId, userId);
+
+        if (installationId) {
+            try {
+                const { RepoService } = await import("../repo/service");
+                const { RepoRepository } = await import("../repo/repository");
+                const repoService = new RepoService(new RepoRepository());
+                const octokit = await repoService.getInstallationOctokit(installationId);
+                const { data: installation } = await octokit.rest.apps.getInstallation({
+                    installation_id: parseInt(installationId),
+                });
+
+                if (installation.account && 'login' in installation.account) {
+                    await this.repository.updateUserGithubStatus(userId, installation.account.login);
+                }
+            } catch (error) {
+                console.error('Failed to update user GitHub status after installation:', error);
+            }
+        }
+
+        return result;
     }
 
     async getOrgById(orgId: string) {
@@ -72,5 +88,19 @@ export class OrganizationService {
         const org = await this.repository.findById(orgId);
         if (!org) throw new NotFoundError("Organization not found");
         return org;
+    }
+
+    async checkOrgAccess(orgId: string, userId: string) {
+        const org = await this.getOrgById(orgId);
+        if (org.owner === userId) {
+            return { isOwner: true, isMember: true };
+        }
+
+        const member = await this.repository.findOrgMember(orgId, userId);
+        if (member) {
+            return { isOwner: false, isMember: true };
+        }
+
+        throw new ForbiddenError("You do not have access to this organization");
     }
 }

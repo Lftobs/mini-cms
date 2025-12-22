@@ -8,19 +8,24 @@ import {
 	listReposHandler,
 } from "./handlers";
 
-export const repoRoutes = new Hono().get(
-	"/integrate/repos",
-	zValidator(
-		"query",
-		z.object({
-			projectId: z.string(),
-			orgInstallationId: z.string(),
-		}),
-	),
-	listReposHandler,
-);
+import { requireAuth } from "../shared/middleware";
+
+export const repoRoutes = new Hono()
+	.use("*", requireAuth)
+	.get(
+		"/integrate/repos",
+		zValidator(
+			"query",
+			z.object({
+				projectId: z.string(),
+				orgInstallationId: z.string(),
+			}),
+		),
+		listReposHandler,
+	);
 
 export const projectRepoRoutes = new Hono()
+	.use("*", requireAuth)
 	.get(
 		"/:owner/:repo/contents",
 		zValidator(

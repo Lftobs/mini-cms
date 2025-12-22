@@ -119,7 +119,7 @@ const ssrOrganizations = Array.isArray(orgsData) ? orgsData : [];
 							type="button"
 							@click="loadRepositories"
 							:disabled="isLoadingRepos || !selectedOrgId"
-							class="inline-flex items-center gap-2 px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-white text-earth-700 hover:bg-earth-50 focus:outline-none focus:ring-2 focus:ring-earth-500 focus:border-earth-500 disabled:opacity-50 disabled:cursor-not-allowed w-[10rem]"
+							class="inline-flex text-sm font-normal items-center gap-2 px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-white text-earth-700 hover:bg-earth-50 focus:outline-none focus:ring-2 focus:ring-earth-500 focus:border-earth-500 disabled:opacity-50 disabled:cursor-not-allowed w-[10rem]"
 						>
 							<Spinner x-show="isLoadingRepos" />
 							<span

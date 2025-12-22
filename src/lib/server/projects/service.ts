@@ -1,4 +1,6 @@
 import { ProjectRepository } from "./repository";
+import { OrganizationRepository } from "../organizations/repository";
+import { OrganizationService } from "../organizations/service";
 import { RepoService } from "../repo/service";
 import { RepoRepository } from "../repo/repository";
 import { sendInviteEmail } from "../email";
@@ -28,12 +30,17 @@ export class ProjectService {
         repo_name: string;
         github_repo_url: string;
         orgs_id: string;
+        userId: string;
     }) {
-        const { name, repo_name, github_repo_url, orgs_id } = data;
+        const { name, repo_name, github_repo_url, orgs_id, userId } = data;
 
-        if (!name || !repo_name || !github_repo_url || !orgs_id) {
-            throw new ValidationError("Name, repo_name, github_repo_url and orgs_id are required");
+        if (!name || !repo_name || !github_repo_url || !orgs_id || !userId) {
+            throw new ValidationError("Name, repo_name, github_repo_url, orgs_id and userId are required");
         }
+
+        const orgRepository = new OrganizationRepository();
+        const orgService = new OrganizationService(orgRepository);
+        await orgService.checkOrgAccess(orgs_id, userId);
 
         const existingProject = await this.repository.findByName(name);
         if (existingProject) {
@@ -54,19 +61,25 @@ export class ProjectService {
         return project;
     }
 
-    async checkProjectAccess(projectId: string, userId: string) {
+    async checkProjectAccess(
+        projectId: string,
+        userId: string,
+        accessType: "owner" | "member" | "both" = "both"
+    ) {
         const project = await this.repository.getProjectWithOrg(projectId);
         if (!project) {
             throw new NotFoundError("Project not found");
         }
 
-        if (project.owner === userId) {
+        if ((accessType === "owner" || accessType === "both") && project.owner === userId) {
             return true;
         }
 
-        const member = await this.repository.findMember(projectId, userId);
-        if (member) {
-            return true;
+        if (accessType === "member" || accessType === "both") {
+            const member = await this.repository.findMember(projectId, userId);
+            if (member) {
+                return true;
+            }
         }
 
         throw new ForbiddenError("You do not have access to this project");
@@ -114,7 +127,7 @@ export class ProjectService {
             throw new ValidationError("Project ID is required");
         }
 
-        await this.checkProjectAccess(projectId, userId);
+        await this.checkProjectAccess(projectId, userId, "owner");
 
         const project = await this.repository.findById(projectId);
         if (!project || !project.linked_repo_name || !project.github_repo_link) {

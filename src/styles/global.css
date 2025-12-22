@@ -62,12 +62,28 @@
 	/* accent (slate-900) */
 	--color-earth-600: #2f3037;
 	/* nav text */
+	--color-earth-accent: #d97706;
+	--color-earth-accent-light: #f59e0b;
 	--color-gray-50: #f9fafb;
 	--color-gray-100: #f3f4f6;
 	--color-gray-200: #e5e7eb;
 	--color-white: #ffffff;
 	--color-white-50: rgba(255, 255, 255, 0.08);
 	--error: var(--color-red-700);
+
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	--animate-fade-in-up: fadeInUp 0.8s ease-out forwards;
 }
 
 @theme inline {
@@ -165,6 +181,152 @@
 	backdrop-filter: blur(8.25px);
 }
 
+
+.glass-card {
+	background: rgba(255, 255, 255, 0.7);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	box-shadow:
+		0 8px 32px rgba(55, 50, 47, 0.08),
+		inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.glass-card-trans {
+	background: transparent;
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	box-shadow:
+		0 8px 32px rgba(55, 50, 47, 0.08),
+		inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.glass-panel {
+	background: rgba(255, 255, 255, 0.5);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	box-shadow: 0 4px 16px rgba(55, 50, 47, 0.06);
+}
+
+
+.glass-nav {
+	background: rgba(247, 245, 243, 0.85);
+	backdrop-filter: blur(16px) saturate(180%);
+	-webkit-backdrop-filter: blur(16px) saturate(180%);
+	border: 1px solid rgba(255, 255, 255, 0.4);
+	box-shadow:
+		0 4px 24px rgba(55, 50, 47, 0.08),
+		inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.floating-card {
+	transition:
+		transform 0.3s ease,
+		box-shadow 0.3s ease;
+}
+
+.floating-card:hover {
+	transform: translateY(-4px);
+	box-shadow:
+		0 12px 40px rgba(55, 50, 47, 0.12),
+		0 4px 12px rgba(55, 50, 47, 0.08);
+}
+
+
+.gradient-mesh {
+	background:
+		radial-gradient(ellipse 80% 50% at 20% 40%,
+			rgba(217, 119, 6, 0.08) 0%,
+			transparent 50%),
+		radial-gradient(ellipse 60% 40% at 80% 60%,
+			rgba(245, 158, 11, 0.06) 0%,
+			transparent 50%),
+		radial-gradient(ellipse 50% 30% at 50% 20%,
+			rgba(55, 50, 47, 0.03) 0%,
+			transparent 50%);
+}
+
+.gradient-overlay {
+	background: linear-gradient(180deg,
+			rgba(247, 245, 243, 0) 0%,
+			rgba(247, 245, 243, 0.5) 50%,
+			rgba(247, 245, 243, 0) 100%);
+}
+
+
+.glow-button {
+	position: relative;
+	overflow: hidden;
+}
+
+.glow-button::before {
+	content: "";
+	position: absolute;
+	inset: -2px;
+	background: linear-gradient(135deg,
+			rgba(217, 119, 6, 0.4),
+			rgba(245, 158, 11, 0.2),
+			rgba(217, 119, 6, 0.4));
+	border-radius: inherit;
+	z-index: -1;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+.glow-button:hover::before {
+	opacity: 1;
+}
+
+.section-divider {
+	height: 1px;
+	background: linear-gradient(90deg,
+			transparent 0%,
+			rgba(55, 50, 47, 0.12) 20%,
+			rgba(55, 50, 47, 0.12) 80%,
+			transparent 100%);
+}
+
+@keyframes gradientShift {
+
+	0%,
+	100% {
+		background-position: 0% 50%;
+	}
+
+	50% {
+		background-position: 100% 50%;
+	}
+}
+
+.gradient-border {
+	position: relative;
+}
+
+.gradient-border::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	padding: 1px;
+	background: linear-gradient(135deg,
+			rgba(217, 119, 6, 0.3),
+			rgba(245, 158, 11, 0.1),
+			rgba(55, 50, 47, 0.1),
+			rgba(217, 119, 6, 0.3));
+	background-size: 200% 200%;
+	animation: gradientShift 4s ease infinite;
+	border-radius: inherit;
+	-webkit-mask:
+		linear-gradient(#fff 0 0) content-box,
+		linear-gradient(#fff 0 0);
+	mask:
+		linear-gradient(#fff 0 0) content-box,
+		linear-gradient(#fff 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
+}
+
 /* MDX Editor Styles */
 .mdx-editor-wrapper {
 	height: 100%;
@@ -205,7 +367,6 @@
 	overflow-y: auto;
 }
 
-/* Prose styling for MDX content */
 .mdx-editor-wrapper .prose {
 	max-width: none;
 	color: rgb(75 85 99);
@@ -383,7 +544,6 @@
 	box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
 }
 
-/* Toolbar separator styling */
 .mdx-editor-wrapper .mdxeditor-toolbar-separator {
 	width: 1px;
 	height: 1.5rem;
@@ -391,7 +551,6 @@
 	margin: 0 0.5rem;
 }
 
-/* Dialog/Modal styling */
 .mdx-editor-wrapper [role="dialog"] {
 	background-color: white;
 	border-radius: 0.5rem;
@@ -401,7 +560,6 @@
 	border: 1px solid rgb(209 213 219);
 }
 
-/* Focus styles */
 .mdx-editor-wrapper *:focus {
 	outline: 2px solid rgb(59 130 246);
 	outline-offset: 2px;

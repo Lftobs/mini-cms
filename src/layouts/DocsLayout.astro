@@ -1,0 +1,254 @@
+---
+import "../styles/global.css";
+import { ClientRouter } from "astro:transitions";
+
+interface Props {
+    title: string;
+    description?: string;
+}
+
+const {
+    title,
+    description = "Mini CMS Documentation - Learn how to manage your content directly in GitHub",
+} = Astro.props;
+
+const navItems = [
+    { title: "Introduction", href: "/docs" },
+    { title: "Getting Started", href: "/docs/getting-started" },
+    { title: "Configuration", href: "/docs/configuration" },
+    { title: "Features", href: "/docs/features" },
+];
+
+const currentIndex = navItems.findIndex(
+    (item) =>
+        Astro.url.pathname === item.href ||
+        (item.href !== "/docs" && Astro.url.pathname.startsWith(item.href)),
+);
+const prevItem = currentIndex > 0 ? navItems[currentIndex - 1] : null;
+const nextItem =
+    currentIndex < navItems.length - 1 ? navItems[currentIndex + 1] : null;
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="generator" content={Astro.generator} />
+        <title>{title} | Mini CMS Docs</title>
+        <meta name="description" content={description} />
+        <ClientRouter />
+        <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+        ></script>
+    </head>
+    <body
+        class="bg-earth-100 text-earth-400 font-sans min-h-screen relative overflow-x-hidden"
+    >
+        <!-- Gradient Mesh Background -->
+        <div class="fixed inset-0 gradient-mesh pointer-events-none z-0"></div>
+
+        <div
+            class="relative flex flex-col justify-start items-center w-full z-10"
+        >
+            <!-- Main container -->
+            <div
+                class="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] relative flex flex-col min-h-screen"
+            >
+                <!-- Vertical lines -->
+                <div
+                    class="w-[1px] h-full absolute left-4 sm:left-6 md:left-8 lg:left-0 top-0 bg-[rgba(55,50,47,0.12)] shadow-[1px_0px_0px_white] z-0"
+                >
+                </div>
+                <div
+                    class="w-[1px] h-full absolute right-4 sm:right-6 md:right-8 lg:right-0 top-0 bg-[rgba(55,50,47,0.12)] shadow-[1px_0px_0px_white] z-0"
+                >
+                </div>
+
+                <header
+                    class="h-20 flex items-center justify-between px-6 relative z-20 border-b border-[rgba(55,50,47,0.06)]"
+                >
+                    <a
+                        href="/"
+                        class="flex items-center gap-2 text-earth-600 text-xl font-medium group"
+                    >
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="text-earth-accent transition-transform duration-500 group-hover:rotate-180"
+                        >
+                            <path
+                                d="M21 16V8.00002C20.9996 7.22382 20.6994 6.47852 20.163 5.92202C19.6266 5.36552 18.894 4.03802 18.117 4.03802H5.883C5.106 4.03802 4.37339 5.36552 3.83698 5.92202C3.30056 6.47852 3.00036 7.22382 3 8.00002V16C3.00036 16.7762 3.30056 17.5215 3.83698 18.078C4.37339 18.6345 5.106 18.962 5.883 18.962H18.117C18.894 18.962 19.6266 18.6345 20.163 18.078C20.6994 17.5215 20.9996 16.7762 21 16Z"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"></path>
+                            <path
+                                d="M12 12H12.01"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"></path>
+                        </svg>
+                        mini-cms
+                    </a>
+                    <div class="flex items-center gap-4">
+                        <a
+                            href="/auth/login"
+                            class="px-4 py-2 bg-white shadow-sm rounded-full text-sm font-medium hover:shadow-md transition-all border border-transparent hover:border-earth-accent/20"
+                            >Log in</a
+                        >
+                    </div>
+                </header>
+
+                <div class="flex-1 flex flex-col md:flex-row relative z-10">
+                    <aside
+                        class="w-full md:w-64 p-6 border-r border-[rgba(55,50,47,0.06)] md:sticky md:top-0 md:h-[calc(100vh-80px)] overflow-y-auto"
+                    >
+                        <nav class="flex flex-col gap-2">
+                            {
+                                navItems.map((item) => {
+                                    const isActive =
+                                        Astro.url.pathname === item.href ||
+                                        (item.href !== "/docs" &&
+                                            Astro.url.pathname.startsWith(
+                                                item.href,
+                                            ));
+                                    return (
+                                        <a
+                                            href={item.href}
+                                            class={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                                isActive
+                                                    ? "bg-white shadow-sm text-earth-accent border border-earth-accent/10"
+                                                    : "hover:bg-white/50 hover:text-earth-accent text-earth-300"
+                                            }`}
+                                        >
+                                            {item.title}
+                                        </a>
+                                    );
+                                })
+                            }
+                        </nav>
+                    </aside>
+
+                    <!-- Main Content -->
+                    <main
+                        class="flex-1 p-8 md:p-12 max-w-3xl mx-auto w-full flex flex-col"
+                    >
+                        <div class="prose prose-earth max-w-none flex-1">
+                            <slot />
+                        </div>
+
+                        <!-- Progressive Navigation -->
+                        <div
+                            class="mt-16 pt-8 border-t border-[rgba(55,50,47,0.06)] flex justify-between items-center gap-4"
+                        >
+                            {
+                                prevItem ? (
+                                    <a
+                                        href={prevItem.href}
+                                        class="flex-1 group p-4 rounded-2xl border border-[rgba(55,50,47,0.06)] hover:border-earth-accent/20 hover:bg-white/50 transition-all"
+                                    >
+                                        <div class="text-xs text-earth-200 mb-1">
+                                            Previous
+                                        </div>
+                                        <div class="text-sm font-medium text-earth-400 group-hover:text-earth-accent flex items-center gap-2">
+                                            <svg
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path d="M19 12H5M12 19l-7-7 7-7" />
+                                            </svg>
+                                            {prevItem.title}
+                                        </div>
+                                    </a>
+                                ) : (
+                                    <div class="flex-1" />
+                                )
+                            }
+
+                            {
+                                nextItem ? (
+                                    <a
+                                        href={nextItem.href}
+                                        class="flex-1 group p-4 rounded-2xl border border-[rgba(55,50,47,0.06)] hover:border-earth-accent/20 hover:bg-white/50 transition-all text-right"
+                                    >
+                                        <div class="text-xs text-earth-200 mb-1">
+                                            Next
+                                        </div>
+                                        <div class="text-sm font-medium text-earth-400 group-hover:text-earth-accent flex items-center justify-end gap-2">
+                                            {nextItem.title}
+                                            <svg
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path d="M5 12h14M12 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </a>
+                                ) : (
+                                    <div class="flex-1" />
+                                )
+                            }
+                        </div>
+                    </main>
+                </div>
+
+                <footer
+                    class="py-8 px-6 border-t border-[rgba(55,50,47,0.06)] text-center text-sm text-earth-200"
+                >
+                    &copy; {new Date().getFullYear()} Mini CMS. Built for developers.
+                </footer>
+            </div>
+        </div>
+    </body>
+</html>
+
+<style is:global>
+    @reference "../styles/global.css";
+    .prose-earth h1 {
+        @apply text-4xl font-normal text-earth-500 mb-8;
+    }
+    .prose-earth h2 {
+        @apply text-2xl font-medium text-earth-400 mt-12 mb-4;
+    }
+    .prose-earth h3 {
+        @apply text-xl font-medium text-earth-400 mt-8 mb-2;
+    }
+    .prose-earth p {
+        @apply text-earth-300 leading-relaxed mb-6;
+    }
+    .prose-earth ul {
+        @apply list-disc list-inside mb-6 text-earth-300;
+    }
+    .prose-earth li {
+        @apply mb-2;
+    }
+    .prose-earth code {
+        @apply bg-earth-100 px-1.5 py-0.5 rounded text-earth-400 font-mono text-sm;
+    }
+    .prose-earth pre {
+        @apply bg-[#FDFCFB] text-earth-300 p-4 rounded-xl overflow-x-auto mb-6 font-mono text-sm border border-[rgba(55,50,47,0.06)] shadow-sm;
+    }
+    .prose-earth pre code {
+        @apply bg-transparent p-0 text-earth-300;
+    }
+    .prose-earth a {
+        @apply text-earth-accent hover:underline;
+    }
+</style>

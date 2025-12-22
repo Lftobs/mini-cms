@@ -34,7 +34,7 @@ export const authMiddleware = createMiddleware<{ Variables: AuthVariables }>(asy
             c.set("user", user);
         }
     } catch (err) {
-
+        console.error('[Auth] Failed to authenticate user from token:', err);
     }
 
     await next();

@@ -46,7 +46,7 @@ import "@/styles/global.css";
   }"
 	x-init="init()"
 	@beforeunload="mounted = false; clearInterval(interval)"
-	class="w-full min-h-screen relative bg-[#F7F5F3] overflow-x-hidden flex flex-col justify-start items-center"
+	class="w-full min-h-screen relative bg-earth-100 overflow-x-hidden flex flex-col justify-start items-center"
 >
 	<!-- Gradient Mesh Background -->
 	<div class="fixed inset-0 gradient-mesh pointer-events-none z-0"></div>
@@ -133,16 +133,16 @@ import "@/styles/global.css";
 										Pricing
 									</div>
 								</div>
-								<div
+								<a
 									class="flex justify-start items-center cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/50 transition-all duration-200"
-									@click="scrollToSection('docs')"
+									href="/docs"
 								>
 									<div
 										class="flex flex-col justify-center text-[rgba(49,45,43,0.80)] text-xs md:text-[13px] font-medium leading-[14px] font-sans"
 									>
 										Docs
 									</div>
-								</div>
+								</a>
 							</div>
 						</div>
 						<div

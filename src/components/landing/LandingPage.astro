@@ -10,12 +10,24 @@ const { currentUser } = Astro.locals;
 
 <div
 	x-data="{
+    user: null,
     activeCard: 0,
     progress: 0,
     interval: null,
     mounted: true,
-    init() {
+    async init() {
       this.startProgress();
+      if (!window.userPromise) {
+          if (window.actions) {
+             window.userPromise = window.actions.usersActions.me();
+          }
+      }
+      if (window.userPromise) {
+          const { data } = await window.userPromise;
+          if (data?.user) {
+              this.user = data.user;
+          }
+      }
     },
     startProgress() {
       this.interval = setInterval(() => {
@@ -109,10 +121,15 @@ const { currentUser } = Astro.locals;
 					<div
 						class="w-full max-w-[497px] lg:w-[497px] flex flex-col justify-center items-center gap-6 sm:gap-8 md:gap-10 lg:gap-12 relative z-10 mt-6 sm:mt-8 md:mt-10 lg:mt-12"
 					>
+						<script>
+							import { actions } from "astro:actions";
+							if (!window.actions) window.actions = actions;
+						</script>
 						<div
 							class="backdrop-blur-[8.25px] flex justify-start items-center gap-4"
 						>
 							<a
+								:href="user ? '/dashboard' : '/auth/login'"
 								href={currentUser
 									? "/dashboard"
 									: "/auth/login"}
@@ -121,7 +138,7 @@ const { currentUser } = Astro.locals;
 								<div
 									class="flex flex-col justify-center text-white text-sm sm:text-base md:text-[15px] font-medium leading-5 font-sans"
 								>
-									Start for free
+									<span x-text="user ? 'Go to Dashboard' : 'Start for free'">Start for free</span>
 								</div>
 							</a>
 						</div>

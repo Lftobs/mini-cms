@@ -5,6 +5,13 @@ import { ConflictError, NotFoundError } from "../lib/server/shared/errors";
 import { getCurrentUser } from "./orgs";
 
 export const usersActions = {
+	me: defineAction({
+		handler: async (_, context) => {
+			return {
+				user: context.locals.currentUser,
+			};
+		},
+	}),
 	updateProfile: defineAction({
 		accept: "form",
 		input: z.object({

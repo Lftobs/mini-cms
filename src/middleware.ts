@@ -94,7 +94,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 });
 
 
-const publicRoutes = ["/auth/login", "/api/auth", "/_astro", "/favicon.ico", "/sitemap-index.xml", "/sitemap-0.xml", "/docs"];
+const publicRoutes = ["/", "/auth/login", "/api/auth", "/_astro", "/favicon.ico", "/sitemap-index.xml", "/sitemap-0.xml", "/docs"];
 
 const isPublicRoute = (pathname: string) => {
 	return publicRoutes.some((route) => {

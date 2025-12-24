@@ -6,11 +6,25 @@ const { currentUser } = Astro.locals;
 <div
   id="pricing"
   x-data="{
+    user: null,
     billingPeriod: 'annually',
     pricing: {
       starter: { monthly: 0, annually: 0 },
       professional: { monthly: 20, annually: 16 },
       enterprise: { monthly: 200, annually: 160 }
+    },
+    async init() {
+        if (!window.userPromise) {
+            if (window.actions) {
+               window.userPromise = window.actions.usersActions.me();
+            }
+        }
+        if (window.userPromise) {
+            const { data } = await window.userPromise;
+            if (data?.user) {
+                this.user = data.user;
+            }
+        }
     }
   }"
   class="w-full flex flex-col justify-center items-center gap-2 relative"
@@ -53,6 +67,10 @@ const { currentUser } = Astro.locals;
         </div>
       </div>
 
+      <script>
+        import { actions } from "astro:actions";
+        if (!window.actions) window.actions = actions;
+      </script>
       <!-- Title -->
       <div
         class="self-stretch text-center flex justify-center flex-col text-[#49423D] text-3xl md:text-5xl font-semibold leading-tight md:leading-[60px] font-sans tracking-tight"
@@ -220,6 +238,7 @@ const { currentUser } = Astro.locals;
             </div>
 
             <a
+              :href="user ? '/dashboard' : '/auth/login'"
               href={currentUser ? "/dashboard" : "/auth/login"}
               class="self-stretch px-4 py-[10px] relative bg-[#37322F] shadow-[0px_2px_4px_rgba(55,50,47,0.12)] overflow-hidden rounded-[99px] flex justify-center items-center hover:scale-105 transition-transform duration-300"
             >
@@ -230,7 +249,7 @@ const { currentUser } = Astro.locals;
               <div
                 class="max-w-[108px] flex justify-center flex-col text-[#FBFAF9] text-[13px] font-medium leading-5 font-sans"
               >
-                Start for free
+                <span x-text="user ? 'Go to Dashboard' : 'Start for free'">Start for free</span>
               </div>
             </a>
           </div>
@@ -329,6 +348,7 @@ const { currentUser } = Astro.locals;
 
             <!-- CTA Button -->
             <a
+              :href="user ? '/dashboard' : '/auth/login'"
               href={currentUser ? "/dashboard" : "/auth/login"}
               class="self-stretch px-4 py-[10px] relative bg-[#FBFAF9] shadow-[0px_2px_4px_rgba(55,50,47,0.12)] overflow-hidden rounded-[99px] flex justify-center items-center hover:scale-105 transition-transform duration-300"
             >
@@ -339,7 +359,7 @@ const { currentUser } = Astro.locals;
               <div
                 class="max-w-[108px] flex justify-center flex-col text-[#37322F] text-[13px] font-medium leading-5 font-sans"
               >
-                Get started
+                 <span x-text="user ? 'Go to Dashboard' : 'Get started'">Get started</span>
               </div>
             </a>
           </div>

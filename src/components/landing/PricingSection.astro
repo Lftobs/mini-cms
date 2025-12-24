@@ -1,5 +1,6 @@
 ---
 // PricingSection.astro
+const { currentUser } = Astro.locals;
 ---
 
 <div
@@ -218,8 +219,9 @@
               </div>
             </div>
 
-            <div
-              class="self-stretch px-4 py-[10px] relative bg-[#37322F] shadow-[0px_2px_4px_rgba(55,50,47,0.12)] overflow-hidden rounded-[99px] flex justify-center items-center"
+            <a
+              href={currentUser ? "/dashboard" : "/auth/login"}
+              class="self-stretch px-4 py-[10px] relative bg-[#37322F] shadow-[0px_2px_4px_rgba(55,50,47,0.12)] overflow-hidden rounded-[99px] flex justify-center items-center hover:scale-105 transition-transform duration-300"
             >
               <div
                 class="w-full h-[41px] absolute left-0 top-[-0.5px] bg-gradient-to-b from-[rgba(255,255,255,0.20)] to-[rgba(0,0,0,0.10)] mix-blend-multiply"
@@ -230,7 +232,7 @@
               >
                 Start for free
               </div>
-            </div>
+            </a>
           </div>
 
           <div
@@ -326,8 +328,9 @@
             </div>
 
             <!-- CTA Button -->
-            <div
-              class="self-stretch px-4 py-[10px] relative bg-[#FBFAF9] shadow-[0px_2px_4px_rgba(55,50,47,0.12)] overflow-hidden rounded-[99px] flex justify-center items-center"
+            <a
+              href={currentUser ? "/dashboard" : "/auth/login"}
+              class="self-stretch px-4 py-[10px] relative bg-[#FBFAF9] shadow-[0px_2px_4px_rgba(55,50,47,0.12)] overflow-hidden rounded-[99px] flex justify-center items-center hover:scale-105 transition-transform duration-300"
             >
               <div
                 class="w-full h-[41px] absolute left-0 top-[-0.5px] bg-gradient-to-b from-[rgba(255,255,255,0)] to-[rgba(0,0,0,0.10)] mix-blend-multiply"
@@ -338,7 +341,7 @@
               >
                 Get started
               </div>
-            </div>
+            </a>
           </div>
 
           <div

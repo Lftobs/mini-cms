@@ -4,6 +4,8 @@ import FAQSection from "./FAQSection.astro";
 import FooterSection from "./FooterSection.astro";
 import Navbar from "./Navbar.astro";
 import "@/styles/global.css";
+
+const { currentUser } = Astro.locals;
 ---
 
 <div
@@ -110,16 +112,18 @@ import "@/styles/global.css";
 						<div
 							class="backdrop-blur-[8.25px] flex justify-start items-center gap-4"
 						>
-							<div
+							<a
+								href={currentUser
+									? "/dashboard"
+									: "/auth/login"}
 								class="h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-gradient-to-r from-earth-200 to-earth-500 overflow-hidden rounded-full flex justify-center items-center cursor-pointer transition-transform duration-300 hover:scale-105"
-								@click="scrollToSection('pricing')"
 							>
 								<div
 									class="flex flex-col justify-center text-white text-sm sm:text-base md:text-[15px] font-medium leading-5 font-sans"
 								>
 									Start for free
 								</div>
-							</div>
+							</a>
 						</div>
 					</div>
 

@@ -64,16 +64,12 @@ if (!userOrgs) {
 	needsGitHubInstallation={!currentOrg?.installationId}
 >
 	<div class="min-h-screen bg-earth-50 flex">
-		<!-- Sidebar -->
 		<Sidebar organizations={userOrgs} currentOrg={currentOrg} />
-		<!-- Main Content -->
+
 		<div class="flex-1 flex flex-col">
-			<!-- Header -->
 			<Header currentUser={currentUser} />
 
-			<!-- Page Content -->
 			<main class="flex-1 p-6">
-				<!-- Error Alert Modal -->
 				<div
 					id="error-alert"
 					class="fixed top-4 right-4 z-50 max-w-md bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg"

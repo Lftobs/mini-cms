@@ -9,56 +9,7 @@ const { currentUser } = Astro.locals;
 ---
 
 <div
-	x-data="{
-    user: null,
-    activeCard: 0,
-    progress: 0,
-    interval: null,
-    mounted: true,
-    async init() {
-      this.startProgress();
-      if (!window.userPromise) {
-          if (window.actions) {
-             window.userPromise = window.actions.usersActions.me();
-          }
-      }
-      if (window.userPromise) {
-          const { data } = await window.userPromise;
-          if (data?.user) {
-              this.user = data.user;
-          }
-      }
-    },
-    startProgress() {
-      this.interval = setInterval(() => {
-        if (!this.mounted) return;
-        this.progress += 2;
-        if (this.progress >= 100) {
-          this.activeCard = (this.activeCard + 1) % 3;
-          this.progress = 0;
-        }
-      }, 100);
-    },
-    handleCardClick(index) {
-      if (!this.mounted) return;
-      this.activeCard = index;
-      this.progress = 0;
-    },
-    getDashboardContent() {
-      switch (this.activeCard) {
-        case 0: return 'Customer Subscription Status and Details';
-        case 1: return 'Analytics Dashboard - Real-time Insights';
-        case 2: return 'Data Visualization - Charts and Metrics';
-        default: return 'Customer Subscription Status and Details';
-      }
-    },
-    scrollToSection(sectionId) {
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  }"
+	x-data="landingPage"
 	x-init="init()"
 	@beforeunload="mounted = false; clearInterval(interval)"
 	class="w-full min-h-screen relative bg-earth-100 overflow-x-hidden flex flex-col justify-start items-center"
@@ -121,10 +72,6 @@ const { currentUser } = Astro.locals;
 					<div
 						class="w-full max-w-[497px] lg:w-[497px] flex flex-col justify-center items-center gap-6 sm:gap-8 md:gap-10 lg:gap-12 relative z-10 mt-6 sm:mt-8 md:mt-10 lg:mt-12"
 					>
-						<script>
-							import { actions } from "astro:actions";
-							if (!window.actions) window.actions = actions;
-						</script>
 						<div
 							class="backdrop-blur-[8.25px] flex justify-start items-center gap-4"
 						>
@@ -362,3 +309,57 @@ const { currentUser } = Astro.locals;
 		</div>
 	</div>
 </div>
+
+<script>
+    import { actions } from "astro:actions";
+    import Alpine from "alpinejs";
+
+    Alpine.data("landingPage", () => ({
+        user: null,
+        activeCard: 0,
+        progress: 0,
+        interval: null,
+        mounted: true,
+        async init() {
+            this.startProgress();
+            if (!window.userPromise) {
+                window.userPromise = actions.usersActions.me();
+            }
+            if (window.userPromise) {
+                const { data } = await window.userPromise;
+                if (data?.user) {
+                    this.user = data.user;
+                }
+            }
+        },
+        startProgress() {
+            this.interval = setInterval(() => {
+                if (!this.mounted) return;
+                this.progress += 2;
+                if (this.progress >= 100) {
+                    this.activeCard = (this.activeCard + 1) % 3;
+                    this.progress = 0;
+                }
+            }, 100);
+        },
+        handleCardClick(index) {
+            if (!this.mounted) return;
+            this.activeCard = index;
+            this.progress = 0;
+        },
+        getDashboardContent() {
+            switch (this.activeCard) {
+                case 0: return 'Customer Subscription Status and Details';
+                case 1: return 'Analytics Dashboard - Real-time Insights';
+                case 2: return 'Data Visualization - Charts and Metrics';
+                default: return 'Customer Subscription Status and Details';
+            }
+        },
+        scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    }));
+</script>

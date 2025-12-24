@@ -2,12 +2,6 @@
 const { currentUser } = Astro.locals;
 ---
 
-<script>
-    import { actions } from "astro:actions";
-    // Expose actions to window for AlpineJS
-    if (!window.actions) window.actions = actions;
-</script>
-
 <div
     class="w-full h-12 sm:h-14 md:h-16 lg:h-[84px] absolute left-0 top-0 flex justify-center items-center z-20 px-6 sm:px-8 md:px-12 lg:px-0"
 >
@@ -106,22 +100,7 @@ const { currentUser } = Astro.locals;
             class="h-6 sm:h-7 md:h-8 flex justify-start items-start gap-2 sm:gap-3"
         >
             <div
-                x-data="{
-                    user: null,
-                    async init() {
-                        if (!window.userPromise) {
-                            if (window.actions) {
-                               window.userPromise = window.actions.usersActions.me();
-                            }
-                        }
-                        if (window.userPromise) {
-                            const { data } = await window.userPromise;
-                            if (data?.user) {
-                                this.user = data.user;
-                            }
-                        }
-                    }
-                }"
+                x-data="navbarUser"
                 class="px-2 sm:px-3 md:px-[14px] py-1 sm:py-[6px] bg-white shadow-[0_2px_10px_rgba(217,119,6,0.15)] overflow-hidden rounded-full flex justify-center items-center hover:shadow-[0_4px_20px_rgba(217,119,6,0.3)] transition-all duration-200 border border-transparent hover:border-earth-accent/20 hover:scale-105 active:scale-95"
             >
                 {
@@ -155,3 +134,23 @@ const { currentUser } = Astro.locals;
         </div>
     </div>
 </div>
+
+<script>
+    import { actions } from "astro:actions";
+    import Alpine from "alpinejs";
+
+    Alpine.data("navbarUser", () => ({
+        user: null,
+        async init() {
+            if (!window.userPromise) {
+                window.userPromise = actions.usersActions.me();
+            }
+            if (window.userPromise) {
+                const { data } = await window.userPromise;
+                if (data?.user) {
+                    this.user = data.user;
+                }
+            }
+        }
+    }));
+</script>

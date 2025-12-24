@@ -44,27 +44,8 @@ const { currentUser } = Astro.locals;
       >
         <div
           class="flex justify-start items-center gap-4"
-          x-data="{
-              user: null,
-              async init() {
-                  if (!window.userPromise) {
-                      if (window.actions) {
-                         window.userPromise = window.actions.usersActions.me();
-                      }
-                  }
-                  if (window.userPromise) {
-                      const { data } = await window.userPromise;
-                      if (data?.user) {
-                          this.user = data.user;
-                      }
-                  }
-              }
-          }"
+          x-data="ctaUser"
         >
-          <script>
-            import { actions } from "astro:actions";
-            if (!window.actions) window.actions = actions;
-          </script>
           <a
             :href="user ? '/dashboard' : '/auth/login'"
             href={currentUser ? "/dashboard" : "/auth/login"}
@@ -81,3 +62,23 @@ const { currentUser } = Astro.locals;
     </div>
   </div>
 </div>
+
+<script>
+    import { actions } from "astro:actions";
+    import Alpine from "alpinejs";
+
+    Alpine.data("ctaUser", () => ({
+        user: null,
+        async init() {
+            if (!window.userPromise) {
+                window.userPromise = actions.usersActions.me();
+            }
+            if (window.userPromise) {
+                const { data } = await window.userPromise;
+                if (data?.user) {
+                    this.user = data.user;
+                }
+            }
+        }
+    }));
+</script>

@@ -1,3 +1,7 @@
+---
+const { currentUser } = Astro.locals;
+---
+
 <div
   id="cta"
   class="w-full relative overflow-hidden flex flex-col justify-center items-center gap-2"
@@ -39,7 +43,8 @@
         class="w-full max-w-[497px] flex flex-col justify-center items-center gap-12"
       >
         <div class="flex justify-start items-center gap-4">
-          <div
+          <a
+            href={currentUser ? "/dashboard" : "/auth/login"}
             class="h-10 px-12 py-[6px] relative bg-gradient-to-r from-earth-200 to-earth-500 overflow-hidden rounded-full flex justify-center items-center cursor-pointer hover:scale-105 transition-transform duration-300"
           >
             <div
@@ -47,7 +52,7 @@
             >
               Start for free
             </div>
-          </div>
+          </a>
         </div>
       </div>
     </div>

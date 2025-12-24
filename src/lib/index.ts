@@ -8,8 +8,13 @@ import { authMiddleware } from "./server/shared/middleware";
 
 const app = new Hono({ strict: false }).basePath("/api");
 
+const allowedOrigins = [import.meta.env.SITE];
+if (import.meta.env.PUBLIC_APP_ENV !== 'prod') {
+	allowedOrigins.push("http://localhost:4321");
+}
+
 app.use("*", cors({
-	origin: [import.meta.env.SITE, "http://localhost:4321"],
+	origin: allowedOrigins,
 	allowHeaders: ['Content-Type', 'Authorization', 'X-Custom-Header', 'Upgrade-Insecure-Requests'],
 	allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
 	exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],

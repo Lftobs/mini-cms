@@ -39,23 +39,18 @@ const nextItem =
         <title>{title} | Mini CMS Docs</title>
         <meta name="description" content={description} />
         <ClientRouter />
-        <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
-        ></script>
     </head>
     <body
         class="bg-earth-100 text-earth-400 font-sans min-h-screen relative overflow-x-hidden"
     >
-        <!-- Gradient Mesh Background -->
         <div class="fixed inset-0 gradient-mesh pointer-events-none z-0"></div>
 
         <div
             class="relative flex flex-col justify-start items-center w-full z-10"
         >
-            <!-- Main container -->
             <div
                 class="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] relative flex flex-col min-h-screen"
             >
-                <!-- Vertical lines -->
                 <div
                     class="w-[1px] h-full absolute left-4 sm:left-6 md:left-8 lg:left-0 top-0 bg-[rgba(55,50,47,0.12)] shadow-[1px_0px_0px_white] z-0"
                 >
@@ -142,7 +137,6 @@ const nextItem =
                             <slot />
                         </div>
 
-                        <!-- Progressive Navigation -->
                         <div
                             class="mt-16 pt-8 border-t border-[rgba(55,50,47,0.06)] flex justify-between items-center gap-4"
                         >

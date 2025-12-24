@@ -5,33 +5,41 @@ export interface RequestContext {
     };
 }
 
-let storage: any = null;
 
-if (import.meta.env.SSR) {
-    import("node:async_hooks")
+let storage: any = null;
+let initPromise: Promise<void> | null = null;
+
+async function ensureStorage() {
+    if (storage || !import.meta.env.SSR) return;
+    if (initPromise) {
+        await initPromise;
+        return;
+    }
+
+    initPromise = import("node:async_hooks")
         .then((mod) => {
             storage = new mod.AsyncLocalStorage<RequestContext>();
         })
         .catch((err) => {
             console.error("[RequestContext] Failed to initialize AsyncLocalStorage:", err);
+            throw err;
         });
-}
 
+    await initPromise;
+}
 export async function runWithContext<T>(context: RequestContext, fn: () => Promise<T>): Promise<T> {
     if (import.meta.env.SSR) {
+        await ensureStorage();
         if (!storage) {
-            try {
-                const mod = await import("node:async_hooks");
-                storage = new mod.AsyncLocalStorage<RequestContext>();
-            } catch (e) {
-                return fn();
-            }
+            throw new Error("[RequestContext] Failed to initialize AsyncLocalStorage");
         }
         return storage.run(context, fn);
     }
-
+    console.log("[RequestContext] - run fn");
     return fn();
 }
+
+
 
 export function getRequestContext(): RequestContext | undefined {
     if (import.meta.env.SSR && storage) {

@@ -13,6 +13,10 @@ export class OrganizationService {
         return orgs;
     }
 
+    async findByName(name: string) {
+        return await this.repository.findByName(name);
+    }
+
     async createOrg(data: { name: string; description: string; userId: string }) {
         const { name, description, userId } = data;
 

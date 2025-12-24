@@ -67,15 +67,19 @@ export class AuthService {
 
         if (!existing) {
             try {
+                const { slugify } = await import("../../../utils/slugify");
+                let orgName = `${slugify(user.username)}-org`;
+                let finalOrgName = orgName;
+
                 const createDefaultOrg = await this.orgService.createOrg({
-                    name: `${user.username}-org`,
+                    name: finalOrgName,
                     description: "Default organization",
                     userId: user.id,
                 });
                 redirectUrl = createDefaultOrg.redirect;
             } catch (error) {
                 console.error('Failed to create default org for new user:', error);
-                // Fallback to dashboard if org creation fails
+                throw error;
             }
         }
 
@@ -101,7 +105,6 @@ export class AuthService {
 
     async verifyAccessToken(token: string): Promise<TokenPayload> {
         try {
-            // Check if token is blacklisted first
             if (await isBlacklisted(token)) {
                 throw new AuthenticationError('Token has been revoked');
             }

@@ -2,10 +2,16 @@ import { Redis } from "@upstash/redis";
 
 const { UPSTASH_URL, UPSTASH_TOKEN } = import.meta.env;
 
-const redis = new Redis({
-	url: UPSTASH_URL!,
-	token: UPSTASH_TOKEN!,
-});
+let redis: Redis | null = null;
+
+if (UPSTASH_URL && UPSTASH_TOKEN) {
+	redis = new Redis({
+		url: UPSTASH_URL,
+		token: UPSTASH_TOKEN,
+	});
+} else {
+	console.warn("[Cache] Redis credentials missing. Caching is disabled.");
+}
 
 
 interface CacheItem<T> {
@@ -45,7 +51,7 @@ export function createCachedFetcher<T, P extends string = string>(
 	fetchFn: (param: P) => Promise<T>,
 	options: { ttl?: number } = {},
 ) {
-	const { ttl = 86400 } = options; // Default TTL: 1 day
+	const { ttl = 86400 } = options;
 
 	const getCacheKey = (param: P) => `${namespace}:${param}`;
 
@@ -56,22 +62,21 @@ export function createCachedFetcher<T, P extends string = string>(
 		async fetch(param: P): Promise<T> {
 			const cacheKey = getCacheKey(param);
 
-			try {
-				// Try to get from cache first
-				const cached = await redis.get<CacheItem<T>>(cacheKey);
-				if (cached) {
-					console.log(`[Cache] Hit for ${cacheKey}`);
-					return cached.data;
+			if (redis) {
+				try {
+					const cached = await redis.get<CacheItem<T>>(cacheKey);
+					if (cached) {
+						// console.log(`[Cache] Hit for ${cacheKey}`);
+						return cached.data;
+					}
+				} catch (error) {
+					console.warn(
+						`[Cache] Error reading from cache for ${cacheKey}:`,
+						error,
+					);
 				}
-			} catch (error) {
-				console.warn(
-					`[Cache] Error reading from cache for ${cacheKey}:`,
-					error,
-				);
-				// Continue with fresh fetch on cache error
 			}
 
-			// If not in cache or cache error, fetch fresh data
 			return this.revalidate(param);
 		},
 
@@ -82,7 +87,6 @@ export function createCachedFetcher<T, P extends string = string>(
 			const cacheKey = getCacheKey(param);
 
 			try {
-				// Fetch fresh data
 				const freshData = await fetchFn(param);
 
 				// Update cache
@@ -91,14 +95,15 @@ export function createCachedFetcher<T, P extends string = string>(
 					lastUpdated: Date.now(),
 				};
 
-				try {
-					await redis.set(cacheKey, cacheItem, { ex: ttl });
-				} catch (cacheError) {
-					console.warn(
-						`[Cache] Error writing to Redis for ${cacheKey}:`,
-						cacheError,
-					);
-					// Continue even if cache write fails
+				if (redis) {
+					try {
+						await redis.set(cacheKey, cacheItem, { ex: ttl });
+					} catch (cacheError) {
+						console.warn(
+							`[Cache] Error writing to Redis for ${cacheKey}:`,
+							cacheError,
+						);
+					}
 				}
 
 				return freshData;
@@ -107,7 +112,7 @@ export function createCachedFetcher<T, P extends string = string>(
 					`[Cache] Error fetching/caching data for ${cacheKey}:`,
 					error,
 				);
-				throw error; // Re-throw to let caller handle fetch errors
+				throw error;
 			}
 		},
 
@@ -117,6 +122,7 @@ export function createCachedFetcher<T, P extends string = string>(
 		 */
 		async getLastUpdated(param: P): Promise<number | null> {
 			const cacheKey = getCacheKey(param);
+			if (!redis) return null;
 			try {
 				const cached = await redis.get<CacheItem<T>>(cacheKey);
 				return cached?.lastUpdated ?? null;
@@ -134,6 +140,7 @@ export function createCachedFetcher<T, P extends string = string>(
 		 */
 		async invalidate(param: P): Promise<void> {
 			const cacheKey = getCacheKey(param);
+			if (!redis) return;
 			try {
 				await redis.del(cacheKey);
 			} catch (error) {
@@ -148,6 +155,7 @@ export function createCachedFetcher<T, P extends string = string>(
 		 * Removes all cached items in this namespace
 		 */
 		async invalidateAll(): Promise<void> {
+			if (!redis) return;
 			try {
 				const keys = await redis.keys(`${namespace}:*`);
 				if (keys.length > 0) {

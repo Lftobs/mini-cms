@@ -72,8 +72,14 @@ export class OrganizationService {
                     installation_id: parseInt(installationId),
                 });
 
-                if (installation.account && 'login' in installation.account) {
-                    await this.repository.updateUserGithubStatus(userId, installation.account.login);
+                const installationData = installation as any;
+                const isOrg = (installation.account as any)?.type === 'Organization';
+
+                if (!isOrg) {
+                    const githubName = installationData.sender?.login || (installation.account as any)?.login;
+                    if (githubName) {
+                        await this.repository.updateUserGithubStatus(userId, githubName);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to update user GitHub status after installation:', error);

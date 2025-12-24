@@ -102,11 +102,13 @@ export class ProjectRepository {
                 .set({ ...settings, updated_at: now })
                 .where(eq(ProjectSettings.project_id, projectId));
         } else {
-            await db.insert(ProjectSettings).values({
-                project_id: projectId,
-                ...settings,
-                created_at: now,
-            });
+            await db.insert(ProjectSettings).values(
+                withId({
+                    project_id: projectId,
+                    ...settings,
+                    created_at: now,
+                })
+            );
         }
         return await this.getSettings(projectId);
     }

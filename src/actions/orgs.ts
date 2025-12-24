@@ -23,7 +23,7 @@ export const orgsActions = {
 			try {
 				const orgs = await userOrgs.fetch(userId);
 
-				if (!("data" in orgs)) {
+				if (!orgs || !("data" in orgs)) {
 					throw new ActionError({
 						code: "NOT_FOUND",
 						message: "No organizations found",

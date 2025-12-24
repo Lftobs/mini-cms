@@ -1,17 +1,14 @@
 ---
 import Newlayout from "../../layouts/Newlayout.astro";
 
-if (Astro.locals.currentUser) {
-	return Astro.redirect("/dashboard");
-}
-
 const redirectParam = Astro.url.searchParams.get("next") || "/dashboard";
 const googleLoginUrl = `/api/auth/google/login?next=${encodeURIComponent(redirectParam)}`;
 ---
 
 <Newlayout title="Sign in - mini-cms">
+	<div class="fixed inset-0 gradient-mesh pointer-events-none z-0"></div>
 	<div
-		class="w-full min-h-screen relative bg-[#F7F5F3] overflow-x-hidden flex flex-col justify-center items-center"
+		class="w-full min-h-screen relative overflow-x-hidden flex flex-col justify-center items-center"
 	>
 		<div
 			class="relative z-10 w-full max-w-[1060px] px-4 sm:px-6 md:px-8 lg:px-0 flex flex-col justify-center items-center"

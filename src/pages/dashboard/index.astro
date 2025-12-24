@@ -74,7 +74,7 @@ if (!currentOrg && Array.isArray(userOrgs) && userOrgs.length > 0) {
 	return Astro.redirect("/dashboard?org=" + currentOrg.id);
 }
 
-const userName = currentUser?.githubName || currentUser?.username;
+const userName = currentUser?.username;
 
 const needsGitHubInstallation = !currentOrg?.installationId;
 
@@ -82,8 +82,8 @@ let projects: any[] = [];
 let hasMoreProjects = false;
 if (currentOrg && userId) {
 	try {
-		const projectsResponse = userProjects.fetch(userId);
-		const projectsData = (await projectsResponse).data;
+		const projectsResponse = await userProjects.fetch(userId);
+		const projectsData = projectsResponse?.data;
 		if (projectsData) {
 			const orgProjects = projectsData.filter(
 				(project: { org_id: any; }) => project.org_id === currentOrg.id,

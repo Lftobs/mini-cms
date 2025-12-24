@@ -24,9 +24,11 @@ export type AuthVariables = {
 export const authMiddleware = createMiddleware<{ Variables: AuthVariables }>(async (c, next) => {
     const accessToken = getCookie(c, config.auth.cookies.accessToken.name);
 
+
     if (!accessToken) {
         return await next();
     }
+
 
     try {
         const user = await authService.getCurrentUser(accessToken);

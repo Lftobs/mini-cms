@@ -200,7 +200,7 @@ export const projectsActions = {
 
 				const res = await req.json();
 
-				userProjects.revalidate(userId);
+				await userProjects.revalidate(userId);
 
 				return {
 					success: true,

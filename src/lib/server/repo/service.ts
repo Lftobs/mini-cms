@@ -65,12 +65,11 @@ export class RepoService {
         return await this.getApp().getInstallationOctokit(parseInt(installationId));
     }
 
-    async validateAllowedDirectory(
+    async getAllowedDirectories(
         projectId: string,
         owner: string,
-        repo: string,
-        path: string
-    ): Promise<{ allowed: boolean; allowedDirs?: string[] }> {
+        repo: string
+    ): Promise<string[]> {
         try {
             const octokit = await this.getProjectOctokit(projectId);
             const { data: configData } = await octokit.rest.repos.getContent({
@@ -87,21 +86,32 @@ export class RepoService {
             ) {
                 const configContent = Buffer.from(configData.content, "base64").toString("utf8");
                 const parsedConfig = YAML.parse(configContent);
-                const allowedDirs = parsedConfig.allowed_directories || [];
-
-                if (Array.isArray(allowedDirs) && allowedDirs.length > 0) {
-                    const isAllowed = allowedDirs.some(
-                        (dir: string) => path.startsWith(dir + "/") || path === dir
-                    );
-                    return { allowed: isAllowed, allowedDirs };
-                }
+                return parsedConfig.allowed_directories || [];
             }
 
-            return { allowed: false };
+            return [];
         } catch (e) {
-            console.warn("Could not verify allowed_directories in .mini-cms.yml", e);
-            return { allowed: false };
+            console.warn("Could not fetch allowed_directories in .mini-cms.yml", e);
+            return [];
         }
+    }
+
+    async validateAllowedDirectory(
+        projectId: string,
+        owner: string,
+        repo: string,
+        path: string
+    ): Promise<{ allowed: boolean; allowedDirs?: string[] }> {
+        const allowedDirs = await this.getAllowedDirectories(projectId, owner, repo);
+
+        if (allowedDirs.length > 0) {
+            const isAllowed = allowedDirs.some(
+                (dir: string) => path.startsWith(dir + "/") || path === dir
+            );
+            return { allowed: isAllowed, allowedDirs };
+        }
+
+        return { allowed: false };
     }
 
     async listRepos(installationId: string) {

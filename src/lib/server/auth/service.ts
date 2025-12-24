@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import axios from "axios";
-import { Octokit } from "@octokit/rest";
 import { AuthRepository } from "./repository";
 import { config } from "../shared/config";
 import { AuthenticationError } from "../shared/errors";
@@ -25,14 +24,6 @@ export interface AuthResult {
     githubToken?: string;
 }
 
-export interface GitHubUser {
-    id: number;
-    login: string;
-    email: string;
-    name: string;
-    avatar_url: string;
-}
-
 export interface GoogleUser {
     id: string;
     email: string;
@@ -43,53 +34,6 @@ export interface GoogleUser {
 export class AuthService {
     constructor(private repository: AuthRepository, private orgService: OrganizationService) { }
 
-    buildGithubAuthUrl(redirect: string, baseUrl: string = config.app.baseUrl): string {
-        const state = Buffer.from(JSON.stringify({ redirect })).toString('base64');
-        const redirectUri = `${baseUrl}/api/auth/github/callback`;
-        const scope = "repo orgs";
-
-        return `https://github.com/login/oauth/authorize?client_id=${config.auth.github.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
-    }
-
-    async handleGithubCallback(code: string, state?: string): Promise<AuthResult> {
-        const githubToken = await this.exchangeGithubCode(code);
-
-        const githubUser = await this.getGithubUser(githubToken);
-
-        const [user, existing] = await this.repository.findOrCreateUser({
-            email: githubUser.email,
-            username: githubUser.name || githubUser.login,
-            githubName: githubUser.login,
-            provider: 'github',
-            isGithubEnabled: true,
-            pfp: githubUser.avatar_url,
-        });
-
-
-        const tokens = this.generateTokens({
-            id: user.id,
-            githubName: user.githubName || '',
-        });
-
-        let appInstallationUrl: string | undefined;
-
-        if (!existing) {
-            const createDefaultOrg = await this.orgService.createOrg({
-                name: `${user.githubName}-org`,
-                description: "Default organization",
-                userId: user.id,
-            });
-            appInstallationUrl = createDefaultOrg.redirect;
-
-        }
-
-        return {
-            user,
-            tokens,
-            githubToken,
-            redirectUrl: appInstallationUrl ? appInstallationUrl : this.extractRedirectUrl(state),
-        };
-    }
 
     buildGoogleAuthUrl(redirect: string, baseUrl: string = config.app.baseUrl): string {
         const state = Buffer.from(JSON.stringify({ redirect: decodeURIComponent(redirect) })).toString('base64');
@@ -119,10 +63,30 @@ export class AuthService {
             githubName: user.githubName || '',
         });
 
+        let redirectUrl = this.extractRedirectUrl(state);
+
+        if (!existing) {
+            try {
+                const { slugify } = await import("../../../utils/slugify");
+                let orgName = `${slugify(user.username)}-org`;
+                let finalOrgName = orgName;
+
+                const createDefaultOrg = await this.orgService.createOrg({
+                    name: finalOrgName,
+                    description: "Default organization",
+                    userId: user.id,
+                });
+                redirectUrl = createDefaultOrg.redirect;
+            } catch (error) {
+                console.error('Failed to create default org for new user:', error);
+                throw error;
+            }
+        }
+
         return {
             user,
             tokens,
-            redirectUrl: this.extractRedirectUrl(state)
+            redirectUrl
         };
     }
 
@@ -141,7 +105,6 @@ export class AuthService {
 
     async verifyAccessToken(token: string): Promise<TokenPayload> {
         try {
-            // Check if token is blacklisted first
             if (await isBlacklisted(token)) {
                 throw new AuthenticationError('Token has been revoked');
             }
@@ -217,38 +180,6 @@ export class AuthService {
     }
 
     /** private helper methods **/
-    private async exchangeGithubCode(code: string): Promise<string> {
-        try {
-            const response = await axios.post("https://github.com/login/oauth/access_token", {
-                client_id: config.auth.github.clientId,
-                client_secret: config.auth.github.clientSecret,
-                code,
-            }, {
-                headers: { Accept: "application/json", timeout: 30000 }
-            });
-
-            const accessToken = response.data.access_token;
-            if (!accessToken) {
-                throw new Error('No access token received from GitHub');
-            }
-
-            return accessToken;
-        } catch (error) {
-            console.error('GitHub code exchange error:', error);
-            throw new AuthenticationError('Failed to authenticate with GitHub');
-        }
-    }
-
-    private async getGithubUser(accessToken: string): Promise<GitHubUser> {
-        try {
-            const octokit = new Octokit({ auth: accessToken });
-            const { data: user } = await octokit.users.getAuthenticated();
-            return user as GitHubUser;
-        } catch (error) {
-            console.error('GitHub user fetch error:', error);
-            throw new AuthenticationError('Failed to fetch user information from GitHub');
-        }
-    }
 
     private async exchangeGoogleCode(code: string, baseUrl: string = config.app.baseUrl): Promise<{ access_token: string; id_token: string }> {
         try {

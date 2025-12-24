@@ -2,16 +2,12 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
 import { createOrgHandler, getAllOrgsHandler } from "./handlers";
+import { requireAuth } from "../shared/middleware";
 
 export const orgs = new Hono()
+	.use("*", requireAuth)
 	.get(
 		"/",
-		zValidator(
-			"query",
-			z.object({
-				userId: z.string(),
-			}),
-		),
 		getAllOrgsHandler,
 	)
 	.post(
@@ -21,7 +17,6 @@ export const orgs = new Hono()
 			z.object({
 				name: z.string(),
 				description: z.string(),
-				userId: z.string(),
 			}),
 		),
 		createOrgHandler,

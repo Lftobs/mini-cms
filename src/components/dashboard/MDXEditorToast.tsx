@@ -461,7 +461,7 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 								!isMounted ||
 								(getUnsavedFiles().length === 0 && pendingCreates.length === 0)
 							}
-							className="px-4 py-1.5 text-sm bg-earth-400 text-white rounded-md hover:bg-earth-500 disabled:bg-earth-200 disabled:text-earth-300 transition-colors"
+							className="px-4 py-1.5 text-sm bg-earth-300 text-white rounded-md hover:bg-earth-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							Commit Changes (
 							{isMounted ? getUnsavedFiles().length + pendingCreates.length : 0}
@@ -612,7 +612,7 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 			{showDraftModal && pendingDraft && (
 				<div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50">
 					<div className="bg-white rounded-lg p-6 w-96 max-w-md">
-						<h3 className="text-lg font-semibold text-earth-400 mb-4">
+						<h3 className="text-lg font-semibold text-earth-500 mb-4">
 							Unsaved Changes Found
 						</h3>
 						<p className="text-earth-300 mb-6">
@@ -625,7 +625,7 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 						<div className="flex justify-end space-x-3">
 							<button
 								onClick={() => {
-									// Don't restore, remove the draft
+									// remove the draft
 									const draftKey = `${repoOwner}/${repoName}/${pendingDraft.filePath}`;
 									const newDrafts = { ...drafts };
 									delete newDrafts[draftKey];
@@ -645,7 +645,7 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 									setShowDraftModal(false);
 									setPendingDraft(null);
 								}}
-								className="px-4 py-2 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+								className="px-4 py-2 text-sm bg-earth-200 text-white rounded-md hover:bg-earth-400 transition-colors"
 							>
 								Restore Changes
 							</button>

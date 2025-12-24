@@ -47,10 +47,7 @@ const { currentUser } = Astro.props;
 							<p
 								class="font-semibold text-sm text-earth-400 m-0 truncate"
 							>
-								{
-									currentUser?.githubName ||
-										currentUser?.username
-								}
+								{currentUser?.username}
 							</p>
 							{
 								currentUser?.email && (
@@ -70,14 +67,14 @@ const { currentUser } = Astro.props;
 								Your Profile
 							</a>
 						</li>
-						<li>
+						<!-- <li>
 							<a
 								href="/dashboard/settings"
 								class="block px-4 py-2 text-earth-300 hover:bg-earth-50 hover:text-earth-400 transition-colors"
 							>
 								Settings
 							</a>
-						</li>
+						</li> -->
 						<li class="h-px bg-earth-100 my-2"></li>
 						<li>
 							<button

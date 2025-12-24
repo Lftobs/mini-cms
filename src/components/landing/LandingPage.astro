@@ -2,6 +2,7 @@
 import CTASection from "./CTASection.astro";
 import FAQSection from "./FAQSection.astro";
 import FooterSection from "./FooterSection.astro";
+import Navbar from "./Navbar.astro";
 import "@/styles/global.css";
 ---
 
@@ -46,13 +47,12 @@ import "@/styles/global.css";
   }"
 	x-init="init()"
 	@beforeunload="mounted = false; clearInterval(interval)"
-	class="w-full min-h-screen relative bg-[#F7F5F3] overflow-x-hidden flex flex-col justify-start items-center"
+	class="w-full min-h-screen relative bg-earth-100 overflow-x-hidden flex flex-col justify-start items-center"
 >
 	<!-- Gradient Mesh Background -->
 	<div class="fixed inset-0 gradient-mesh pointer-events-none z-0"></div>
 
 	<div class="relative flex flex-col justify-start items-center w-full z-10">
-		<!-- Main container with proper margins -->
 		<div
 			class="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] relative flex flex-col justify-start items-start min-h-screen"
 		>
@@ -71,96 +71,7 @@ import "@/styles/global.css";
 			<div
 				class="self-stretch pt-[9px] overflow-hidden border-b border-[rgba(55,50,47,0.06)] flex flex-col justify-center items-center gap-4 sm:gap-6 md:gap-8 lg:gap-[66px] relative z-10"
 			>
-				<!-- Navigation -->
-				<div
-					class="w-full h-12 sm:h-14 md:h-16 lg:h-[84px] absolute left-0 top-0 flex justify-center items-center z-20 px-6 sm:px-8 md:px-12 lg:px-0"
-				>
-					<div
-						class="w-full h-0 absolute left-0 top-6 sm:top-7 md:top-8 lg:top-[42px] border-t border-[rgba(55,50,47,0.12)] shadow-[0px_1px_0px_white]"
-					>
-					</div>
-
-					<div
-						class="w-full max-w-[calc(100%-32px)] sm:max-w-[calc(100%-48px)] md:max-w-[calc(100%-64px)] lg:max-w-[700px] lg:w-[700px] h-10 sm:h-11 md:h-12 py-1.5 sm:py-2 px-3 sm:px-4 md:px-4 pr-2 sm:pr-3 glass-nav overflow-hidden rounded-[50px] flex justify-between items-center relative z-30"
-					>
-						<div class="flex justify-center items-center">
-							<div
-								class="flex flex-row items-center gap-2 text-[#2F3037] text-sm sm:text-base md:text-lg lg:text-xl font-medium leading-5 font-sans group cursor-pointer"
-							>
-								<svg
-									width="20"
-									height="20"
-									viewBox="0 0 24 24"
-									fill="none"
-									xmlns="http://www.w3.org/2000/svg"
-									class="text-earth-accent transition-transform duration-500 group-hover:rotate-180"
-								>
-									<path
-										d="M21 16V8.00002C20.9996 7.22382 20.6994 6.47852 20.163 5.92202C19.6266 5.36552 18.894 4.03802 18.117 4.03802H5.883C5.106 4.03802 4.37339 5.36552 3.83698 5.92202C3.30056 6.47852 3.00036 7.22382 3 8.00002V16C3.00036 16.7762 3.30056 17.5215 3.83698 18.078C4.37339 18.6345 5.106 18.962 5.883 18.962H18.117C18.894 18.962 19.6266 18.6345 20.163 18.078C20.6994 17.5215 20.9996 16.7762 21 16Z"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linecap="round"
-										stroke-linejoin="round"></path>
-									<path
-										d="M12 12H12.01"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linecap="round"
-										stroke-linejoin="round"></path>
-								</svg>
-								mini-cms
-							</div>
-							<div
-								class="pl-3 sm:pl-4 md:pl-5 lg:pl-5 flex justify-start items-start hidden sm:flex flex-row gap-1"
-							>
-								<div
-									class="flex justify-start items-center cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/50 transition-all duration-200"
-									@click="scrollToSection('docs')"
-								>
-									<div
-										class="flex flex-col justify-center text-[rgba(49,45,43,0.80)] text-xs md:text-[13px] font-medium leading-[14px] font-sans"
-									>
-										Products
-									</div>
-								</div>
-								<div
-									class="flex justify-start items-center cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/50 transition-all duration-200"
-									@click="scrollToSection('pricing')"
-								>
-									<div
-										class="flex flex-col justify-center text-[rgba(49,45,43,0.80)] text-xs md:text-[13px] font-medium leading-[14px] font-sans"
-									>
-										Pricing
-									</div>
-								</div>
-								<div
-									class="flex justify-start items-center cursor-pointer px-3 py-1.5 rounded-full hover:bg-white/50 transition-all duration-200"
-									@click="scrollToSection('docs')"
-								>
-									<div
-										class="flex flex-col justify-center text-[rgba(49,45,43,0.80)] text-xs md:text-[13px] font-medium leading-[14px] font-sans"
-									>
-										Docs
-									</div>
-								</div>
-							</div>
-						</div>
-						<div
-							class="h-6 sm:h-7 md:h-8 flex justify-start items-start gap-2 sm:gap-3"
-						>
-							<div
-								class="px-2 sm:px-3 md:px-[14px] py-1 sm:py-[6px] bg-white shadow-[0px_1px_2px_rgba(55,50,47,0.12)] overflow-hidden rounded-full flex justify-center items-center hover:shadow-md transition-all duration-200 border border-transparent hover:border-earth-accent/20 hover:scale-105 active:scale-95"
-							>
-								<a
-									href="/auth/login"
-									class="flex flex-col justify-center text-[#37322F] text-xs md:text-[13px] font-medium leading-5 font-sans"
-								>
-									Log in
-								</a>
-							</div>
-						</div>
-					</div>
-				</div>
+				<Navbar />
 
 				<!-- Hero Section -->
 				<div

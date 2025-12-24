@@ -36,14 +36,14 @@ export const config = {
       accessToken: {
         name: 'access_token',
         httpOnly: true,
-        secure: import.meta.env.NODE_ENV === 'production',
+        secure: false,
         maxAge: 900, // 15 minutes
         path: '/',
       },
       refreshToken: {
         name: 'refresh_token',
         httpOnly: true,
-        secure: import.meta.env.NODE_ENV === 'production',
+        secure: import.meta.env.PUBLIC_APP_ENV === 'prod',
         maxAge: 604800, // 7 days
         path: '/',
       }

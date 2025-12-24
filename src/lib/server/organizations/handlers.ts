@@ -8,11 +8,8 @@ export const getAllOrgsHandler = async (c: Context) => {
     const orgRepository = new OrganizationRepository();
     const orgService = new OrganizationService(orgRepository);
     try {
-        const userId = c.req.query("userId");
-        if (!userId) {
-            return c.json(error("userId is required"), 400);
-        }
-        const orgs = await orgService.getAllOrgs(userId);
+        const user = c.get("user");
+        const orgs = await orgService.getAllOrgs(user.id);
         return c.json(success(orgs));
     } catch (err: any) {
         return c.json(error(err.message), err.statusCode || 500);
@@ -23,8 +20,9 @@ export const createOrgHandler = async (c: Context) => {
     const orgRepository = new OrganizationRepository();
     const orgService = new OrganizationService(orgRepository);
     try {
+        const user = c.get("user");
         const body = await c.req.json();
-        const result = await orgService.createOrg(body);
+        const result = await orgService.createOrg({ ...body, userId: user.id });
         return c.json(success(result), 201);
     } catch (err: any) {
         return c.json(error(err.message), err.statusCode || 500);

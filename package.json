@@ -15,6 +15,7 @@
 		"@astrojs/db": "^0.18.3",
 		"@astrojs/node": "^9.5.1",
 		"@astrojs/react": "^4.4.2",
+		"@astrojs/sitemap": "^3.6.0",
 		"@astrojs/vercel": "^9.0.2",
 		"@auth/core": "^0.37.4",
 		"@fontsource/inter": "^5.2.5",

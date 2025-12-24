@@ -1,4 +1,4 @@
-import { db, eq, and, Orgs, OrgMembers } from "astro:db";
+import { db, eq, and, Orgs, OrgMembers, Users } from "astro:db";
 import { withId } from "../../../../db/utils";
 import { NotFoundError, ConflictError } from "../shared/errors";
 
@@ -13,14 +13,12 @@ export class OrganizationRepository {
     }
 
     async getUserOrgs(userId: string) {
-        // Get owned orgs
         const ownedOrgs = await db
             .select()
             .from(Orgs)
             .where(eq(Orgs.owner, userId))
             .all();
 
-        // Get member orgs
         const memberOrgs = await db
             .select({
                 id: Orgs.id,
@@ -36,7 +34,7 @@ export class OrganizationRepository {
             .where(eq(OrgMembers.user_id, userId))
             .all();
 
-        // Combine and deduplicate
+
         const allOrgs = [...ownedOrgs, ...memberOrgs];
         return Array.from(new Map(allOrgs.map((item) => [item.id, item])).values());
     }
@@ -91,5 +89,28 @@ export class OrganizationRepository {
             .where(and(eq(Orgs.id, orgId), eq(Orgs.owner, userId)));
 
         return await this.findById(orgId);
+    }
+
+    async updateUserGithubStatus(userId: string, githubName: string) {
+        await db
+            .update(Users)
+            .set({
+                isGithubEnabled: true,
+                githubName: githubName,
+            })
+            .where(eq(Users.id, userId));
+    }
+
+    async findOrgMember(orgId: string, userId: string) {
+        return await db
+            .select()
+            .from(OrgMembers)
+            .where(
+                and(
+                    eq(OrgMembers.org_id, orgId),
+                    eq(OrgMembers.user_id, userId)
+                )
+            )
+            .get();
     }
 }

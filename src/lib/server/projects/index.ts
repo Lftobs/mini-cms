@@ -12,17 +12,14 @@ import {
 	acceptInviteHandler,
 	getProjectMembersHandler,
 } from "./handlers";
-// import { getProjectMembers } from "./functions"; // Keep this for now if not refactored yet
+
+
+import { requireAuth } from "../shared/middleware";
 
 export const projectRoutes = new Hono()
+	.use("*", requireAuth)
 	.get(
 		"/",
-		zValidator(
-			"query",
-			z.object({
-				userId: z.string(),
-			}),
-		),
 		listProjectsHandler,
 	)
 	.post(

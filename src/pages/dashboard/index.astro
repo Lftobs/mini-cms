@@ -2,7 +2,7 @@
 import { actions } from "astro:actions";
 import GitHubInstallationAlert from "@/components/dashboard/GitHubInstallationAlert.astro";
 import DashboardLayout from "@/layouts/DashboardNewLayout.astro";
-import {currentOrgIdState } from "@/store/navStore";
+import {$orgState, currentOrgIdState } from "@/store/navStore";
 import { userProjects } from "@/utils/cachedFn";
 import { calculateActivityGrowth } from "@/lib/server/shared/utils";
 import type { ProjectActivity } from "@/lib/server/shared/types";
@@ -47,6 +47,7 @@ let userOrgs = [];
 const { data, error } = await Astro.callAction(actions.orgsActions.getOrgs, {});
 if (!error && data) {
 	userOrgs = data;
+	$orgState.set(data)
 }
 
 const orgIdParam = Astro.url.searchParams.get("org");
@@ -73,7 +74,7 @@ if (!currentOrg && Array.isArray(userOrgs) && userOrgs.length > 0) {
 	return Astro.redirect("/dashboard?org=" + currentOrg.id);
 }
 
-const userName = currentUser?.githubName || currentUser?.username;
+const userName = currentUser?.username;
 
 const needsGitHubInstallation = !currentOrg?.installationId;
 
@@ -81,8 +82,8 @@ let projects: any[] = [];
 let hasMoreProjects = false;
 if (currentOrg && userId) {
 	try {
-		const projectsResponse = userProjects.fetch(userId);
-		const projectsData = (await projectsResponse).data;
+		const projectsResponse = await userProjects.fetch(userId);
+		const projectsData = projectsResponse?.data;
 		if (projectsData) {
 			const orgProjects = projectsData.filter(
 				(project: { org_id: any; }) => project.org_id === currentOrg.id,
@@ -136,7 +137,7 @@ const { growth: activityGrowth, sign: growthSign } = calculateActivityGrowth(all
 						</h1>
 						<p class="text-earth-300">
 							Here's what's happening with your projects in{" "}
-							<span class="inline-block bg-yellow-100 font-bold text-earth-400 px-2 py-1 rounded-full text-xs">
+							<span class="inline-block bg-earth-accent-light/50 font-bold text-earth-500 px-2 py-1 rounded-full text-xs">
 								{currentOrg?.name || "your organization"}
 							</span>{" "}
 							today.
@@ -222,7 +223,7 @@ const { growth: activityGrowth, sign: growthSign } = calculateActivityGrowth(all
 									<p class="text-sm font-medium text-earth-200">
 										This Month
 									</p>
-									<p class={`text-2xl font-semibold ${activityGrowth >= 0 ? "text-green-600" : "text-red-600"}`}>
+									<p class={`text-2xl font-semibold ${activityGrowth >= 0 ? "text-green-600" : "text-earth-accent"}`}>
 										{growthSign}{activityGrowth}%
 									</p>
 								</div>

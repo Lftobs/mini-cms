@@ -8,6 +8,7 @@ import "@/styles/global.css";
 
 <div
 	x-data="landingHandler()"
+	x-init="startProgress(); $watch('$el', (el) => { if (!el) { mounted = false; clearInterval(interval); } })"
 	class="w-full min-h-screen relative bg-earth-100 overflow-x-hidden flex flex-col justify-start items-center"
 >
 	<div class="fixed inset-0 gradient-mesh pointer-events-none z-0"></div>

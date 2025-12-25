@@ -4,67 +4,23 @@ import FAQSection from "./FAQSection.astro";
 import FooterSection from "./FooterSection.astro";
 import Navbar from "./Navbar.astro";
 import "@/styles/global.css";
-
-const { currentUser } = Astro.locals;
 ---
 
 <div
-	x-data="{
-    activeCard: 0,
-    progress: 0,
-    interval: null,
-    mounted: true,
-    init() {
-      this.startProgress();
-    },
-    startProgress() {
-      this.interval = setInterval(() => {
-        if (!this.mounted) return;
-        this.progress += 2;
-        if (this.progress >= 100) {
-          this.activeCard = (this.activeCard + 1) % 3;
-          this.progress = 0;
-        }
-      }, 100);
-    },
-    handleCardClick(index) {
-      if (!this.mounted) return;
-      this.activeCard = index;
-      this.progress = 0;
-    },
-    getDashboardContent() {
-      switch (this.activeCard) {
-        case 0: return 'Customer Subscription Status and Details';
-        case 1: return 'Analytics Dashboard - Real-time Insights';
-        case 2: return 'Data Visualization - Charts and Metrics';
-        default: return 'Customer Subscription Status and Details';
-      }
-    },
-    scrollToSection(sectionId) {
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  }"
-	x-init="init()"
-	@beforeunload="mounted = false; clearInterval(interval)"
+	x-data="landingHandler()"
+	x-init="startProgress(); $watch('$el', (el) => { if (!el) { mounted = false; clearInterval(interval); } })"
 	class="w-full min-h-screen relative bg-earth-100 overflow-x-hidden flex flex-col justify-start items-center"
 >
-	<!-- Gradient Mesh Background -->
 	<div class="fixed inset-0 gradient-mesh pointer-events-none z-0"></div>
 
 	<div class="relative flex flex-col justify-start items-center w-full z-10">
 		<div
 			class="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-0 lg:max-w-[1060px] lg:w-[1060px] relative flex flex-col justify-start items-start min-h-screen"
 		>
-			<!-- Left vertical line -->
 			<div
 				class="w-[1px] h-full absolute left-4 sm:left-6 md:left-8 lg:left-0 top-0 bg-[rgba(55,50,47,0.12)] shadow-[1px_0px_0px_white] z-0"
 			>
 			</div>
-
-			<!-- Right vertical line -->
 			<div
 				class="w-[1px] h-full absolute right-4 sm:right-6 md:right-8 lg:right-0 top-0 bg-[rgba(55,50,47,0.12)] shadow-[1px_0px_0px_white] z-0"
 			>
@@ -113,9 +69,7 @@ const { currentUser } = Astro.locals;
 							class="backdrop-blur-[8.25px] flex justify-start items-center gap-4"
 						>
 							<a
-								href={currentUser
-									? "/dashboard"
-									: "/auth/login"}
+								:href="currentUser ? '/dashboard' : '/auth/login'"
 								class="h-10 sm:h-11 md:h-12 px-6 sm:px-8 md:px-10 lg:px-12 py-2 sm:py-[6px] relative bg-gradient-to-r from-earth-200 to-earth-500 overflow-hidden rounded-full flex justify-center items-center cursor-pointer transition-transform duration-300 hover:scale-105"
 							>
 								<div
@@ -345,3 +299,60 @@ const { currentUser } = Astro.locals;
 		</div>
 	</div>
 </div>
+
+<script>
+	import { actions } from "astro:actions";
+	import Alpine from "alpinejs";
+
+	Alpine.data("landingHandler", () => ({
+		activeCard: 0,
+		progress: 0,
+		interval: null,
+		mounted: true,
+		currentUser: null,
+		async init() {
+			this.startProgress();
+			const { data, error } = await actions.usersActions.me();
+			if (!error) {
+				this.currentUser = data;
+			}
+		},
+		startProgress() {
+			this.interval = setInterval(() => {
+				if (!this.mounted) return;
+				this.progress += 2;
+				if (this.progress >= 100) {
+					this.activeCard = (this.activeCard + 1) % 3;
+					this.progress = 0;
+				}
+			}, 100);
+		},
+		handleCardClick(index) {
+			if (!this.mounted) return;
+			this.activeCard = index;
+			this.progress = 0;
+		},
+		getDashboardContent() {
+			switch (this.activeCard) {
+				case 0:
+					return "Customer Subscription Status and Details";
+				case 1:
+					return "Analytics Dashboard - Real-time Insights";
+				case 2:
+					return "Data Visualization - Charts and Metrics";
+				default:
+					return "Customer Subscription Status and Details";
+			}
+		},
+		scrollToSection(sectionId) {
+			const element = document.getElementById(sectionId);
+			if (element) {
+				element.scrollIntoView({ behavior: "smooth" });
+			}
+		},
+		handleBeforeUnload() {
+			this.mounted = false;
+			clearInterval(this.interval);
+		},
+	}));
+</script>

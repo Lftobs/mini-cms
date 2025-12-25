@@ -22,11 +22,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 	return runWithContext({ headers: { cookie } }, async () => {
 		const pathname = context.url.pathname;
-
-
-		if (isPublicRoute(pathname)) {
-			return next();
-		}
+		const isPublic = isPublicRoute(pathname);
 
 		const accessToken = context.cookies.get("access_token")?.value;
 		const refreshToken = context.cookies.get("refresh_token")?.value;
@@ -50,13 +46,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
 				console.error("Token refresh error:", error);
 				context.cookies.delete("access_token", { path: "/" });
 				context.cookies.delete("refresh_token", { path: "/" });
-				return context.redirect(loginUrl);
+				if (!isPublic) return context.redirect(loginUrl);
 			}
 		}
 
 		if (!accessToken && !refreshToken) {
+			if (isPublic) return next();
 			return context.redirect(loginUrl);
 		}
+
 		if (accessToken) {
 			try {
 				const currentUser = await getUser(accessToken);
@@ -83,18 +81,22 @@ export const onRequest = defineMiddleware(async (context, next) => {
 						context.cookies.delete("refresh_token", { path: "/" });
 					}
 				}
+				if (isPublic) return next();
 				return context.redirect(loginUrl);
 			} catch (error) {
 				console.error("Auth middleware error:", error);
+				if (isPublic) return next();
 				return context.redirect(loginUrl);
 			}
 		}
+
+		if (isPublic) return next();
 		return context.redirect(loginUrl);
 	});
 });
 
 
-const publicRoutes = ["/auth/login", "/api/auth", "/_astro", "/favicon.ico", "/sitemap-index.xml", "/sitemap-0.xml", "/docs"];
+const publicRoutes = ["/", "/auth/login", "/api/auth", "/_astro", "/favicon.ico", "/sitemap-index.xml", "/sitemap-0.xml", "/docs", "/_actions"];
 
 const isPublicRoute = (pathname: string) => {
 	return publicRoutes.some((route) => {

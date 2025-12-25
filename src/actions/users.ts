@@ -61,4 +61,9 @@ export const usersActions = {
 			}
 		},
 	}),
+	me: defineAction({
+		handler: async (_, context) => {
+			return context.locals.currentUser || null;
+		},
+	}),
 };

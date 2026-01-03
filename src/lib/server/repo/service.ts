@@ -175,6 +175,13 @@ export class RepoService {
         });
         const latestCommitSha = refData.object.sha;
 
+        const { data: commitData } = await octokit.rest.git.getCommit({
+            owner,
+            repo,
+            commit_sha: latestCommitSha,
+        });
+        const baseTreeSha = commitData.tree.sha;
+
         const blobs = await Promise.all(
             files.map(async (file) => {
                 const { data } = await octokit.rest.git.createBlob({
@@ -195,11 +202,11 @@ export class RepoService {
         const { data: treeData } = await octokit.rest.git.createTree({
             owner,
             repo,
-            base_tree: latestCommitSha,
+            base_tree: baseTreeSha,
             tree: blobs as any,
         });
 
-        const { data: commitData } = await octokit.rest.git.createCommit({
+        const { data: newCommitData } = await octokit.rest.git.createCommit({
             owner,
             repo,
             message,
@@ -211,9 +218,9 @@ export class RepoService {
             owner,
             repo,
             ref: `heads/${TARGET_BRANCH}`,
-            sha: commitData.sha,
+            sha: newCommitData.sha,
         });
 
-        return { success: true, commitSha: commitData.sha };
+        return { success: true, commitSha: newCommitData.sha };
     }
 }

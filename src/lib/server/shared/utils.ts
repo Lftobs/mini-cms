@@ -3,6 +3,16 @@ export interface Activity {
     [key: string]: any;
 }
 
+export function escapeHtml(unsafe: string): string {
+    if (!unsafe) return "";
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 export function calculateActivityGrowth(activities: Activity[]) {
     const now = new Date();
     const currentMonth = now.getMonth();

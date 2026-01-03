@@ -7,15 +7,19 @@ import { sendInviteEmail } from "../email";
 import YAML from "yaml";
 import { NotFoundError, ConflictError, ValidationError, ForbiddenError } from "../shared/errors";
 import { config } from "../shared/config";
+import { AuthService } from "../auth/service";
+import { AuthRepository } from "../auth/repository";
 
 const CONFIG_BRANCH = "mini-cms-flow";
 const CONFIG_FILE = ".mini-cms.yml";
 
 export class ProjectService {
     private repoService: RepoService;
+    private authRepo: AuthRepository;
 
     constructor(private repository: ProjectRepository) {
         this.repoService = new RepoService(new RepoRepository());
+        this.authRepo = new AuthRepository();
     }
 
     async listProjects(userId: string) {
@@ -269,8 +273,18 @@ export class ProjectService {
         if (!token) throw new ValidationError("Token is required");
         if (!userId) throw new ValidationError("User ID is required");
 
+        const user = await this.authRepo.findById(userId);
         const invite = await this.repository.findInviteByToken(token);
+
         if (!invite) throw new NotFoundError("Invalid invitation");
+
+        if (!user || !user.email) {
+            throw new ValidationError("User email not found");
+        }
+
+        if (user.email.toLowerCase() !== invite?.email.toLowerCase()) {
+            throw new ForbiddenError("This invitation was sent to a different email address");
+        }
 
         if (invite.status !== "pending") {
             throw new ValidationError("Invitation is no longer valid");

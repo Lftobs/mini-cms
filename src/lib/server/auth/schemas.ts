@@ -10,5 +10,11 @@ export const refreshSchema = z.object({
 });
 
 export const loginSchema = z.object({
-    redirect: z.string().url().optional(),
+    next: z.string().optional().refine(
+        (val) => {
+            if (!val) return true;
+            return val.startsWith('/') && !val.startsWith('//');
+        },
+        { message: "Redirect must be a relative path starting with /" }
+    ),
 });

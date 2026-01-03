@@ -6,10 +6,10 @@ import {
   refreshTokenHandler,
   logoutHandler
 } from "./handlers";
-import { callbackSchema, refreshSchema } from "./schemas";
+import { callbackSchema, loginSchema, refreshSchema } from "./schemas";
 
 export const auth = new Hono()
-  .get("/google/login", googleLoginHandler)
+  .get("/google/login", zValidator("query", loginSchema), googleLoginHandler)
   .get("/google/callback", zValidator("query", callbackSchema), googleCallbackHandler)
   .post("/refresh", zValidator("json", refreshSchema), refreshTokenHandler)
   .post("/logout", logoutHandler);

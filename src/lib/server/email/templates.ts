@@ -1,3 +1,5 @@
+import { escapeHtml } from "../shared/utils";
+
 interface InviteEmailProps {
     recipientEmail: string;
     recipientName?: string;
@@ -7,6 +9,7 @@ interface InviteEmailProps {
     expiresInDays: number;
 }
 
+
 export const generateInviteEmailHTML = ({
     recipientEmail,
     recipientName,
@@ -15,9 +18,11 @@ export const generateInviteEmailHTML = ({
     inviteLink,
     expiresInDays,
 }: InviteEmailProps): string => {
-    const greeting = recipientName ? `Hi ${recipientName}` : "Hi there";
+    const greeting = recipientName
+        ? `Hi ${escapeHtml(recipientName)}`
+        : "Hi there";
     const inviterText = inviterName
-        ? `${inviterName} has invited you`
+        ? `${escapeHtml(inviterName)} has invited you`
         : "You've been invited";
 
     return `
@@ -50,7 +55,9 @@ export const generateInviteEmailHTML = ({
                             </p>
                             
                             <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 24px;">
-                                ${inviterText} to collaborate on the project <strong>${projectName}</strong>.
+                                ${inviterText} to collaborate on the project <strong>${escapeHtml(
+        projectName,
+    )}</strong>.
                             </p>
                             
                             <p style="margin: 0 0 30px 0; color: #666666; font-size: 14px; line-height: 22px;">
@@ -61,7 +68,9 @@ export const generateInviteEmailHTML = ({
                             <table width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td align="center" style="padding: 20px 0;">
-                                        <a href="${inviteLink}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #322d2b 0%, #49423d 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);">
+                                        <a href="${escapeHtml(
+        inviteLink,
+    )}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #322d2b 0%, #49423d 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);">
                                             Accept Invitation
                                         </a>
                                     </td>
@@ -71,8 +80,10 @@ export const generateInviteEmailHTML = ({
                             <!-- Alternative Link -->
                             <p style="margin: 20px 0 0 0; color: #999999; font-size: 12px; line-height: 18px; text-align: center;">
                                 Or copy and paste this link into your browser:<br/>
-                                <a href="${inviteLink}" style="color: #667eea; text-decoration: none; word-break: break-all;">
-                                    ${inviteLink}
+                                <a href="${escapeHtml(
+        inviteLink,
+    )}" style="color: #667eea; text-decoration: none; word-break: break-all;">
+                                    ${escapeHtml(inviteLink)}
                                 </a>
                             </p>
                         </td>
@@ -85,7 +96,7 @@ export const generateInviteEmailHTML = ({
                                 If you didn't expect this invitation, you can safely ignore this email.
                             </p>
                             <p style="margin: 10px 0 0 0; color: #999999; font-size: 12px; line-height: 18px; text-align: center;">
-                                This email was sent to ${recipientEmail}
+                                This email was sent to ${escapeHtml(recipientEmail)}
                             </p>
                         </td>
                     </tr>
@@ -106,24 +117,26 @@ export const generateInviteEmailText = ({
     inviteLink,
     expiresInDays,
 }: InviteEmailProps): string => {
-    const greeting = recipientName ? `Hi ${recipientName}` : "Hi there";
+    const greeting = recipientName
+        ? `Hi ${escapeHtml(recipientName)}`
+        : "Hi there";
     const inviterText = inviterName
-        ? `${inviterName} has invited you`
+        ? `${escapeHtml(inviterName)} has invited you`
         : "You've been invited";
 
     return `
 ${greeting},
 
-${inviterText} to collaborate on the project "${projectName}".
+${inviterText} to collaborate on the project "${escapeHtml(projectName)}".
 
 Accept the invitation by visiting this link:
-${inviteLink}
+${escapeHtml(inviteLink)}
 
 This invitation will expire in ${expiresInDays} days.
 
 If you didn't expect this invitation, you can safely ignore this email.
 
 ---
-This email was sent to ${recipientEmail}
+This email was sent to ${escapeHtml(recipientEmail)}
 `;
 };

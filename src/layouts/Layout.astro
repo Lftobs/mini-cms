@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Analytics from "@vercel/analytics/astro";
 import { ClientRouter, slide } from "astro:transitions";
 
 interface Props {
@@ -33,6 +34,7 @@ const {
 		<meta property="twitter:description" content={description} />
 		<meta property="twitter:image" content={ogImage} />
 		<ClientRouter />
+		<Analytics />
 		<script defer src="https://unpkg.com/alpinejs@3.15.1/dist/cdn.min.js"
 		></script>
 	</head>

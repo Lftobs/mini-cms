@@ -65,11 +65,11 @@ export class RepoService {
         return await this.getApp().getInstallationOctokit(parseInt(installationId));
     }
 
-    async getAllowedDirectories(
+    async getRepoConfig(
         projectId: string,
         owner: string,
         repo: string
-    ): Promise<string[]> {
+    ): Promise<{ path: string; schema?: any; naming_convention?: string }[]> {
         try {
             const octokit = await this.getProjectOctokit(projectId);
             const { data: configData } = await octokit.rest.repos.getContent({
@@ -86,7 +86,14 @@ export class RepoService {
             ) {
                 const configContent = Buffer.from(configData.content, "base64").toString("utf8");
                 const parsedConfig = YAML.parse(configContent);
-                return parsedConfig.allowed_directories || [];
+                const rawDirs = parsedConfig.allowed_directories || [];
+
+                return rawDirs.map((item: any) => {
+                    if (typeof item === "string") {
+                        return { path: item };
+                    }
+                    return item;
+                });
             }
 
             return [];
@@ -96,22 +103,46 @@ export class RepoService {
         }
     }
 
+    async getAllowedDirectories(
+        projectId: string,
+        owner: string,
+        repo: string
+    ): Promise<string[]> {
+        const config = await this.getRepoConfig(projectId, owner, repo);
+        return config.map(c => c.path);
+    }
+
     async validateAllowedDirectory(
         projectId: string,
         owner: string,
         repo: string,
         path: string
-    ): Promise<{ allowed: boolean; allowedDirs?: string[] }> {
-        const allowedDirs = await this.getAllowedDirectories(projectId, owner, repo);
+    ): Promise<{ allowed: boolean; config?: { path: string; schema?: any; naming_convention?: string } }> {
+        const configs = await this.getRepoConfig(projectId, owner, repo);
 
-        if (allowedDirs.length > 0) {
-            const isAllowed = allowedDirs.some(
-                (dir: string) => path.startsWith(dir + "/") || path === dir
+        if (configs.length > 0) {
+            const matchedConfig = configs.find(
+                (c) => path.startsWith(c.path + "/") || path === c.path
             );
-            return { allowed: isAllowed, allowedDirs };
+            return { allowed: !!matchedConfig, config: matchedConfig };
         }
 
         return { allowed: false };
+    }
+
+    validateFileName(name: string, convention?: string): boolean {
+        if (!convention) return true;
+
+        switch (convention) {
+            case "kebab-case":
+                return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(name);
+            case "snake_case":
+                return /^[a-z0-9]+(_[a-z0-9]+)*$/.test(name);
+            case "camelCase":
+                return /^[a-z][a-zA-Z0-9]*$/.test(name);
+            default:
+                return true;
+        }
     }
 
     async listRepos(installationId: string) {

@@ -3,8 +3,10 @@ import { Hono } from "hono";
 import { z } from "zod";
 import {
 	bulkUpdateFilesHandler,
+	createFileHandler,
 	getDirectoryContentsHandler,
 	getFileContentHandler,
+	getRepoConfigHandler,
 	listReposHandler,
 } from "./handlers";
 
@@ -36,7 +38,20 @@ export const projectRepoRoutes = new Hono()
 		),
 		getDirectoryContentsHandler,
 	)
+	.get("/:owner/:repo/config", getRepoConfigHandler)
 	.get("/:owner/:repo/file", getFileContentHandler)
+	.post(
+		"/:owner/:repo/create-file",
+		zValidator(
+			"json",
+			z.object({
+				path: z.string(),
+				content: z.string(),
+				message: z.string(),
+			})
+		),
+		createFileHandler
+	)
 	.post("/:owner/:repo/bulk-update", bulkUpdateFilesHandler);
 
 export type repoRoutesType = typeof repoRoutes;

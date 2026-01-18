@@ -1,36 +1,50 @@
 import nodemailer from "nodemailer";
 
-const gmailUser = import.meta.env.GMAIL_USER;
-const gmailAppPassword = import.meta.env.GMAIL_APP_PASSWORD;
+// Lazy initialization helper
+function getTransporter() {
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
 
-if (!gmailUser || !gmailAppPassword) {
-    console.warn(
-        "[Email] Gmail credentials not found. Set GMAIL_USER and GMAIL_APP_PASSWORD environment variables. Email sending will be disabled.",
-    );
+    if (!gmailUser || !gmailAppPassword) {
+        return null;
+    }
+
+    return nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: gmailUser,
+            pass: gmailAppPassword,
+        },
+    });
 }
 
-// Create Gmail transporter
-export const transporter =
-    gmailUser && gmailAppPassword
-        ? nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: gmailUser,
-                pass: gmailAppPassword,
-            },
-        })
-        : null;
+let cachedTransporter: nodemailer.Transporter | null | undefined;
 
-export const isEmailEnabled = !!transporter;
+// Exported getter that handles caching and connection verification
+export function getEmailTransporter() {
+    if (cachedTransporter === undefined) {
+        const transporter = getTransporter();
+        cachedTransporter = transporter;
 
-// Verify connection on startup (optional but recommended)
-if (transporter) {
-    transporter
-        .verify()
-        .then(() => {
-            console.log("[Email] Gmail SMTP connection verified successfully");
-        })
-        .catch((error) => {
-            console.error("[Email] Gmail SMTP connection failed:", error);
-        });
+        if (transporter) {
+            transporter
+                .verify()
+                .then(() => {
+                    console.log("[Email] Gmail SMTP connection verified successfully");
+                })
+                .catch((error) => {
+                    console.error("[Email] Gmail SMTP connection failed:", error);
+                });
+        } else {
+            console.warn(
+                "[Email] Gmail credentials not found. Set GMAIL_USER and GMAIL_APP_PASSWORD environment variables. Email sending will be disabled.",
+            );
+        }
+    }
+    return cachedTransporter;
 }
+
+export function isEmailEnabled() {
+    return getEmailTransporter() !== null;
+}
+

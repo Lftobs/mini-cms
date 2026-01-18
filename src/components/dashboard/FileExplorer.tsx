@@ -38,6 +38,12 @@ interface DirectoryNode {
 	isPending?: boolean;
 }
 
+interface DirectoryConfig {
+	path: string;
+	schema?: Record<string, any>;
+	naming_convention?: string;
+}
+
 const FileExplorer: React.FC<FileExplorerProps> = ({
 	projectId,
 	repoOwner,
@@ -52,9 +58,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
-	const [allowedDirectories, setAllowedDirectories] = useState<string[] | null>(
-		null,
-	);
+	const [repoConfig, setRepoConfig] = useState<DirectoryConfig[]>([]);
 	const [settingsLoaded, setSettingsLoaded] = useState(false);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [createType, setCreateType] = useState<"file" | "folder">("file");
@@ -92,32 +96,31 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	const fetchSettings = useCallback(async () => {
 		try {
-			// console.log("[FileExplorer] Fetching settings for project:", projectId);
-			const response = await (api.projects as any)[projectId].settings.$get();
+			// Fetch config from .mini-cms.yml
+			const response = await (api.projects as any)[projectId].repo[repoOwner][repoName].config.$get();
 
-			// console.log("[FileExplorer] Settings response status:", response.status);
 			if (!response.ok) {
-				const errorText = await response.text();
-				console.error("[FileExplorer] Settings fetch failed:", errorText);
-				throw new Error("Failed to fetch project settings");
+				console.warn("[FileExplorer] Config fetch failed, falling back to empty");
+				setRepoConfig([]);
+				setSettingsLoaded(true);
+				return [];
 			}
 
 			const data = await response.json();
-			// console.log("[FileExplorer] Settings data:", data);
-			const settings = data.data;
-			const dirs = JSON.parse(settings.public_directories || "[]");
-			// console.log("[FileExplorer] Allowed directories:", dirs);
-			setAllowedDirectories(dirs);
+			const configs: DirectoryConfig[] = data.data;
+
+			setRepoConfig(configs);
 			setSettingsLoaded(true);
-			return dirs;
+
+			// Return just paths for the UI tree
+			return configs.map(c => c.path);
 		} catch (err) {
 			console.error("[FileExplorer] Error fetching settings:", err);
-			// Fallback to empty if error
-			setAllowedDirectories([]);
+			setRepoConfig([]);
 			setSettingsLoaded(true);
 			return [];
 		}
-	}, [projectId]);
+	}, [projectId, repoOwner, repoName]);
 
 	// build tree structure from flat file list
 	const buildTree = useCallback(
@@ -175,7 +178,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 				const dirs = await fetchSettings();
 
 				if (dirs && dirs.length > 0) {
-
 					const nodes: DirectoryNode[] = dirs.map((dir: string) => ({
 						name: dir,
 						path: dir,
@@ -339,6 +341,19 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	const [isCreating, setIsCreating] = useState(false);
 
+	const validateFileName = (name: string, convention: string) => {
+		switch (convention) {
+			case "kebab-case":
+				return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(name);
+			case "snake_case":
+				return /^[a-z0-9]+(_[a-z0-9]+)*$/.test(name);
+			case "camelCase":
+				return /^[a-z][a-zA-Z0-9]*$/.test(name);
+			default:
+				return true;
+		}
+	};
+
 	const handleCreate = async () => {
 		if (!newItemName.trim() || isCreating) return;
 
@@ -346,20 +361,54 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		const fullPath = createPath ? `${createPath}/${newItemName}` : newItemName;
 
 		try {
+			// Find applicable config
+			const config = repoConfig.find(c => fullPath.startsWith(c.path + "/") || fullPath === c.path || createPath === c.path);
+
+			if (createType === "file" && config?.naming_convention) {
+				// Remove extension
+				const nameWithoutExt = newItemName.includes(".")
+					? newItemName.split(".").slice(0, -1).join(".")
+					: newItemName;
+
+				if (!validateFileName(nameWithoutExt, config.naming_convention)) {
+					throw new Error(`File name must follow ${config.naming_convention} convention`);
+				}
+			}
+
 			if (onFileCreate) {
 				onFileCreate(fullPath, createType);
 			} else {
 				if (createType === "file") {
+					let initialContent = "";
+					if (config?.schema) {
+						try {
+							const yaml = await import("yaml");
+							const frontmatter: Record<string, string> = {};
+
+							Object.entries(config.schema).forEach(([key, value]: [string, any]) => {
+								// Default placeholders
+								frontmatter[key] = "";
+							});
+
+							initialContent = `---\n${yaml.stringify(frontmatter)}---\n`;
+						} catch (e) {
+							console.warn("Failed to generate frontmatter", e);
+						}
+					}
+
 					const response = await (api.projects as any)[projectId].repo[
 						repoOwner
 					][repoName]["create-file"].$post({
 						json: {
 							path: fullPath,
-							content: btoa(""),
+							content: btoa(initialContent),
 							message: `Create ${fullPath}`,
 						},
 					});
-					if (!response.ok) throw new Error(response.statusText);
+					if (!response.ok) {
+						const errData = await response.json();
+						throw new Error(errData.message || response.statusText);
+					}
 				} else {
 					alert(
 						"Cannot create empty folder on server. Please create a file inside it.",
@@ -367,6 +416,10 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 					return;
 				}
 				const contents = await loadDirectoryContents();
+				// Refresh to show new file (simplified, usually we'd reload the specific dir)
+				if (createPath) {
+					await toggleDirectory(createPath);
+				}
 			}
 
 			setShowCreateModal(false);
@@ -556,7 +609,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	if (
 		settingsLoaded &&
-		(!allowedDirectories || allowedDirectories.length === 0)
+		(!repoConfig || repoConfig.length === 0)
 	) {
 		return (
 			<div className="flex-1 flex flex-col items-center justify-center p-6 text-center">

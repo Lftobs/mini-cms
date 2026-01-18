@@ -1,4 +1,4 @@
-import { transporter, isEmailEnabled } from "./client";
+import { getEmailTransporter, isEmailEnabled } from "./client";
 import {
     generateInviteEmailHTML,
     generateInviteEmailText,
@@ -25,7 +25,8 @@ export const sendInviteEmail = async ({
     messageId?: string;
     error?: string;
 }> => {
-    if (!isEmailEnabled || !transporter) {
+    // Check if email is enabled using the function call
+    if (!isEmailEnabled()) {
         console.warn(
             "[Email] Email service is not configured. Skipping email send.",
         );
@@ -35,9 +36,17 @@ export const sendInviteEmail = async ({
         };
     }
 
+    const transporter = getEmailTransporter();
+    if (!transporter) {
+        return {
+            success: false,
+            error: "Email transporter initialization failed",
+        };
+    }
+
     try {
-        const gmailUser = import.meta.env.GMAIL_USER;
-        const fromName = import.meta.env.EMAIL_FROM_NAME || "Mini CMS";
+        const gmailUser = process.env.GMAIL_USER;
+        const fromName = process.env.EMAIL_FROM_NAME || "Mini CMS";
 
         const htmlContent = generateInviteEmailHTML({
             recipientEmail: to,

@@ -3,7 +3,6 @@ import { createHash } from "crypto";
 
 const { UPSTASH_URL, UPSTASH_TOKEN } = import.meta.env;
 
-// Initialize Redis client
 const redis = new Redis({
     url: UPSTASH_URL!,
     token: UPSTASH_TOKEN!,
@@ -99,9 +98,7 @@ export async function isBlacklisted(token: string): Promise<boolean> {
         return exists === 1;
     } catch (error) {
         console.error("[Blacklist] Error checking token blacklist:", error);
-        // On error, fail closed (assume token is valid to avoid blocking legitimate users)
-        // In production, you might want to fail open or have more sophisticated error handling
-        return false;
+        throw new Error("Token validation unavailable");
     }
 }
 

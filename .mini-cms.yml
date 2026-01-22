@@ -1,1 +1,2 @@
-allowed_directories: []
+allowed_directories:
+  - src/content/docs

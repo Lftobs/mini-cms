@@ -69,37 +69,52 @@ const { organizations = [], currentOrg = null } = Astro.props;
 		class="h-full bg-white border-r border-earth-100 flex flex-col transition-all duration-300 md:relative fixed top-0 left-0 bottom-0 z-40 md:z-auto shadow-lg md:shadow-none overflow-hidden"
 		:class="{ 'md:w-64': !isCollapsed, 'md:w-16': isCollapsed, 'translate-x-0': isMobileMenuOpen, '-translate-x-full md:translate-x-0': !isMobileMenuOpen }"
 	>
-		<div class="flex items-center justify-between p-4 border-b border-earth-100 md:justify-start">
-		    <h3 class="text-lg font-semibold text-earth-400">Dashboard</h3>
-		    <button class="md:hidden p-1 text-earth-200 hover:text-earth-400" x-on:click="toggleMobileMenu" aria-label="Close menu">
-		    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
+		<div class="flex items-center justify-between p-4 border-b border-earth-100">
+		    <h3 class="text-lg font-semibold text-earth-400" x-show="!isCollapsed">Dashboard</h3>
+		    <div class="flex items-center space-x-2">
+		    	<button class="hidden md:block p-1 text-earth-200 hover:text-earth-400" x-on:click="toggleCollapse" aria-label="Toggle sidebar">
+		    		<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24" class="transition-transform duration-200" :class="isCollapsed ? 'rotate-180' : ''">
+		    			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+		    		</svg>
+		    	</button>
+		    	<button class="md:hidden p-1 text-earth-200 hover:text-earth-400" x-on:click="toggleMobileMenu" aria-label="Close menu">
+		    	<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="24" height="24">
 		        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-		    </svg>
-		    </button>
+		    	</svg>
+		    	</button>
+		    </div>
 		</div>
 
-		<nav class="flex-1 overflow-y-auto p-4">
+		<nav class="flex-1 overflow-y-auto p-4" :class="{ 'p-2': isCollapsed, 'p-4': !isCollapsed }">
 		    <div class="mb-6">
-				<h4 class="text-xs uppercase tracking-wide text-earth-200 mb-2 px-2">Main</h4>
+				<h4 class="text-xs uppercase tracking-wide text-earth-200 mb-2 px-2" x-show="!isCollapsed">Main</h4>
 				<ul class="space-y-1">
 					<li>
-					<a href="/dashboard" class="flex items-center px-3 py-2 text-earth-300 rounded-md hover:bg-earth-50 hover:text-earth-400 transition-colors font-medium">
-						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20" class="mr-3">
+					<a href="/dashboard" class="flex items-center px-3 py-2 text-earth-300 rounded-md hover:bg-earth-50 hover:text-earth-400 transition-colors font-medium" :class="{ 'justify-center': isCollapsed }">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" :width="isCollapsed ? 32 : 20" :height="isCollapsed ? 32 : 20" :class="{ 'mr-3': !isCollapsed, 'mr-0': isCollapsed }">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
 						</svg>
-						<span>Overview</span>
+						<span x-show="!isCollapsed">Overview</span>
+					</a>
+					</li>
+					<li>
+					<a href="/dashboard/projects" class="flex items-center px-3 py-2 text-earth-300 rounded-md hover:bg-earth-50 hover:text-earth-400 transition-colors font-medium" :class="{ 'justify-center': isCollapsed }">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" :width="isCollapsed ? 32 : 20" :height="isCollapsed ? 32 : 20" :class="{ 'mr-3': !isCollapsed, 'mr-0': isCollapsed }">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+						</svg>
+						<span x-show="!isCollapsed">Projects</span>
 					</a>
 					</li>
 					<li>
 						<div class="relative">
-							<button x-on:click="dropdownOpen = !dropdownOpen" class="w-full flex items-center justify-between px-3 py-2 text-earth-300 rounded-md hover:bg-earth-50 hover:text-earth-400 transition-colors font-medium">
-							<div class="flex items-center">
-								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20" class="mr-3">
+							<button x-on:click="if (!isCollapsed) dropdownOpen = !dropdownOpen" class="w-full flex items-center px-3 py-2 text-earth-300 rounded-md hover:bg-earth-50 hover:text-earth-400 transition-colors font-medium" :class="{ 'justify-center': isCollapsed, 'justify-between': !isCollapsed }">
+							<div class="flex items-center" :class="{ 'justify-center w-full': isCollapsed }">
+								<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" :width="isCollapsed ? 32 : 20" :height="isCollapsed ? 32 : 20" :class="{ 'mr-3': !isCollapsed, 'mr-0': isCollapsed }">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
 								</svg>
-								<span>Organizations</span>
+								<span x-show="!isCollapsed">Organizations</span>
 							</div>
-							<svg class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<svg x-show="!isCollapsed" class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
 							</svg>
 							</button>
@@ -133,29 +148,19 @@ const { organizations = [], currentOrg = null } = Astro.props;
 						</div>
 					</li>
 
-					<li>
-						<SheetForm form="project">
-							<button slot="sheet-form-trigger" @click.prevent="async () => window.history.pushState({}, '', '/dashboard/project/new')" class="flex w-full items-center px-3 py-2 text-earth-300 hover:bg-earth-50 transition-colors">
-								<div class="w-6 h-6 flex items-center justify-center bg-earth-100 text-earth-300 rounded-full mr-2 text-sm font-semibold">
-								+
-								</div>
-								<span>Create Project</span>
-							</button>
-							<ProjectForm />
-						</SheetForm>
-					</li>
+
 				</ul>
 		    </div>
 
 		    <div class="mb-6">
-				<h4 class="text-xs uppercase tracking-wide text-earth-200 mb-2 px-2">Settings</h4>
+				<h4 class="text-xs uppercase tracking-wide text-earth-200 mb-2 px-2" x-show="!isCollapsed">Settings</h4>
 				<ul class="space-y-1">
 					<li>
-						<a href="/dashboard/settings/profile" class="flex items-center px-3 py-2 text-earth-300 rounded-md hover:bg-earth-50 hover:text-earth-400 transition-colors font-medium">
-							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20" class="mr-3">
+						<a href="/dashboard/settings/profile" class="flex items-center px-3 py-2 text-earth-300 rounded-md hover:bg-earth-50 hover:text-earth-400 transition-colors font-medium" :class="{ 'justify-center': isCollapsed }">
+							<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" :width="isCollapsed ? 32 : 20" :height="isCollapsed ? 32 : 20" :class="{ 'mr-3': !isCollapsed, 'mr-0': isCollapsed }">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
 							</svg>
-							<span>Profile</span>
+							<span x-show="!isCollapsed">Profile</span>
 						</a>
 					</li>
 					<!-- <li>
@@ -179,13 +184,6 @@ const { organizations = [], currentOrg = null } = Astro.props;
 		    </div>
 		</nav>
 
-		<div class="p-4 border-t border-earth-100">
-		    <a href="https://docs.github.com/en/rest" target="_blank" class="flex items-center px-3 py-2 bg-earth-50 rounded-md text-earth-300 hover:bg-earth-100 transition-colors">
-		    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20" class="mr-2">
-		        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-		    </svg>
-		    <span>GitHub API Docs</span>
-		    </a>
-		</div>
+
 	</aside>
 </div>

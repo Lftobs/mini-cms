@@ -109,3 +109,60 @@ export const bulkUpdateFilesHandler = async (c: Context) => {
         return c.json(error(err.message), err.statusCode || 500);
     }
 };
+
+export const getRepoConfigHandler = async (c: Context) => {
+    try {
+        const { owner, repo } = c.req.param();
+        const projectId = c.req.param("projectId");
+        const user = c.get("user");
+
+        if (!projectId) {
+            return c.json(error("Project ID is required"), 400);
+        }
+
+        await projectService.checkProjectAccess(projectId, user.id);
+
+        const config = await repoService.getRepoConfig(projectId, owner, repo);
+        return c.json(success(config));
+    } catch (err: any) {
+        return c.json(error(err.message), err.statusCode || 500);
+    }
+};
+
+export const createFileHandler = async (c: Context) => {
+    try {
+        const { owner, repo } = c.req.param();
+        const projectId = c.req.param("projectId");
+        const { path, content, message } = await c.req.json();
+        const user = c.get("user");
+
+        if (!projectId) {
+            return c.json(error("Project ID is required"), 400);
+        }
+
+        await projectService.checkProjectAccess(projectId, user.id);
+
+        const { allowed, config } = await repoService.validateAllowedDirectory(projectId, owner, repo, path);
+        if (!allowed) {
+            return c.json(error("Access to this directory is not allowed"), 403);
+        }
+
+        if (config?.naming_convention) {
+            const filename = path.split("/").pop() || "";
+            // Remove extension
+            const nameWithoutExt = filename.includes(".")
+                ? filename.split(".").slice(0, -1).join(".")
+                : filename;
+
+            if (!repoService.validateFileName(nameWithoutExt, config.naming_convention)) {
+                return c.json(error(`File name must follow ${config.naming_convention} convention`), 400);
+            }
+        }
+
+        // We use bulkUpdateFiles for single file creation too as it handles git flow
+        const result = await repoService.bulkUpdateFiles(projectId, owner, repo, [{ path, content }], message);
+        return c.json(success(result), 201);
+    } catch (err: any) {
+        return c.json(error(err.message), err.statusCode || 500);
+    }
+};

@@ -47,18 +47,18 @@ export default function ProjectSettingsModal({
 				.map((d) => d.trim())
 				.filter((d) => d);
 
-			const payload = {
+			const payload = settings ? {
 				public_directories: JSON.stringify(dirs),
-				allow_file_creation: settings?.allow_file_creation ?? false,
-				allow_file_editing: settings?.allow_file_editing ?? true,
-				allow_file_deletion: settings?.allow_file_deletion ?? false,
-				require_approval: settings?.require_approval ?? true,
-				auto_merge: settings?.auto_merge ?? false,
-				max_file_size: settings?.max_file_size ?? 1048576,
-				allowed_extensions:
-					settings?.allowed_extensions ??
-					JSON.stringify([".md"]),
-				collaborator_message: settings?.collaborator_message ?? "",
+				allow_file_creation: settings.allow_file_creation,
+				allow_file_editing: settings.allow_file_editing,
+				allow_file_deletion: settings.allow_file_deletion,
+				require_approval: settings.require_approval,
+				auto_merge: settings.auto_merge,
+				max_file_size: settings.max_file_size,
+				allowed_extensions: settings.allowed_extensions,
+				collaborator_message: settings.collaborator_message,
+			} : {
+				public_directories: JSON.stringify(dirs),
 			};
 
 			const res = await (api.projects as any)[projectId].settings.$put({

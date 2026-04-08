@@ -16,6 +16,13 @@ interface DraftData {
 	filePath: string;
 }
 
+interface DirectoryConfig {
+	path: string;
+	schema?: Record<string, any>;
+	naming_convention?: string;
+	base_image_path?: string;
+}
+
 interface FileExplorerProps {
 	projectId: string;
 	repoOwner: string;
@@ -36,12 +43,6 @@ interface DirectoryNode {
 	size: number;
 	sha: string;
 	isPending?: boolean;
-}
-
-interface DirectoryConfig {
-	path: string;
-	schema?: Record<string, any>;
-	naming_convention?: string;
 }
 
 const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -70,163 +71,77 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		path: string;
 		type: "file" | "dir";
 	} | null>(null);
+	const [isCreating, setIsCreating] = useState(false);
+	const [baseImagePath, setBaseImagePath] = useState<string>("");
 
-	const loadDirectoryContents = useCallback(
-		async (path: string = "") => {
-			try {
-				const response = await (api.projects as any)[projectId].repo[repoOwner][
-					repoName
-				].contents.$get({
-					query: path ? { path } : {},
-				});
+	// Load entire file tree recursively on mount
+	const loadFileTree = useCallback(async () => {
+		setIsLoading(true);
+		setError(null);
 
-				if (!response.ok) {
-					throw new Error(`Failed to load directory: ${response.statusText}`);
-				}
-
-				const data = await response.json();
-				return data.data as FileItem[];
-			} catch (err) {
-				console.error("Error loading directory:", err);
-				throw err;
-			}
-		},
-		[projectId, repoOwner, repoName],
-	);
-
-	const fetchSettings = useCallback(async () => {
 		try {
-			// Fetch config from .mini-cms.yml
-			const response = await (api.projects as any)[projectId].repo[repoOwner][repoName].config.$get();
+			const response = await (api.projects as any)[projectId].repo[repoOwner][
+				repoName
+			].tree.$get();
 
 			if (!response.ok) {
-				console.warn("[FileExplorer] Config fetch failed, falling back to empty");
-				setRepoConfig([]);
-				setSettingsLoaded(true);
-				return [];
+				throw new Error(`Failed to load file tree: ${response.statusText}`);
 			}
 
 			const data = await response.json();
-			const configs: DirectoryConfig[] = data.data;
+			const { tree, config } = data.data;
 
-			setRepoConfig(configs);
-			setSettingsLoaded(true);
+			// Set config
+			setRepoConfig(config || []);
 
-			// Return just paths for the UI tree
-			return configs.map(c => c.path);
+			// Extract base image path from config (first dir with base_image_path or default)
+			const firstWithImagePath = config?.find((c: DirectoryConfig) => c.base_image_path);
+			if (firstWithImagePath?.base_image_path) {
+				setBaseImagePath(firstWithImagePath.base_image_path);
+			}
+
+			// Mark all directories as expanded by default
+			const expandAll = (nodes: DirectoryNode[]): DirectoryNode[] => {
+				return nodes.map((node) => ({
+					...node,
+					expanded: true,
+					children: node.children ? expandAll(node.children) : undefined,
+				}));
+			};
+
+			const expandedTree = expandAll(tree || []);
+			setRootContents(expandedTree);
+
+			// Pre-expand all paths
+			const collectPaths = (nodes: DirectoryNode[]): string[] => {
+				return nodes.reduce((acc: string[], node) => {
+					if (node.type === "dir") {
+						acc.push(node.path);
+						if (node.children) {
+							acc.push(...collectPaths(node.children));
+						}
+					}
+					return acc;
+				}, []);
+			};
+			setExpandedDirs(new Set(collectPaths(expandedTree)));
 		} catch (err) {
-			console.error("[FileExplorer] Error fetching settings:", err);
-			setRepoConfig([]);
+			console.error("Error loading file tree:", err);
+			setError(err instanceof Error ? err.message : "Failed to load files");
+		} finally {
+			setIsLoading(false);
 			setSettingsLoaded(true);
-			return [];
 		}
 	}, [projectId, repoOwner, repoName]);
 
-	// build tree structure from flat file list
-	const buildTree = useCallback(
-		(items: FileItem[], dirPath: string = ""): DirectoryNode[] => {
-			const nodes: DirectoryNode[] = items.map((item) => ({
-				name: item.name,
-				path: item.path,
-				type: item.type,
-				size: item.size,
-				sha: item.sha,
-				children: item.type === "dir" ? [] : undefined,
-				expanded: expandedDirs.has(item.path),
-			}));
-
-			const pendingInDir = pendingCreates.filter((p) => {
-				const parentPath = p.path.split("/").slice(0, -1).join("/");
-				return parentPath === dirPath;
-			});
-
-			pendingInDir.forEach((p) => {
-				// avoid duplicates if file already exists on server
-				if (!nodes.some((n) => n.path === p.path)) {
-					nodes.push({
-						name: p.path.split("/").pop() || "",
-						path: p.path,
-						type: p.type === "folder" ? "dir" : "file",
-						size: 0,
-						sha: "",
-						children: p.type === "folder" ? [] : undefined,
-						expanded: expandedDirs.has(p.path),
-						isPending: true,
-					});
-				}
-			});
-
-			nodes.sort((a, b) => {
-				if (a.type !== b.type) {
-					return a.type === "dir" ? -1 : 1;
-				}
-				return a.name.localeCompare(b.name);
-			});
-
-			return nodes;
-		},
-		[pendingCreates, expandedDirs],
-	);
-
-	// Load root directory on mount
 	useEffect(() => {
-		const loadRoot = async () => {
-			setIsLoading(true);
-			setError(null);
+		loadFileTree();
+	}, [loadFileTree]);
 
-			try {
-				const dirs = await fetchSettings();
-
-				if (dirs && dirs.length > 0) {
-					const nodes: DirectoryNode[] = dirs.map((dir: string) => ({
-						name: dir,
-						path: dir,
-						type: "dir",
-						size: 0,
-						sha: "",
-						children: undefined,
-						expanded: false,
-					}));
-					setRootContents(nodes);
-				}
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Failed to load files");
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		loadRoot();
-	}, [loadDirectoryContents, fetchSettings]);
-
-
+	// Reload on settings update
 	useEffect(() => {
 		const handleSettingsUpdate = () => {
-			const reload = async () => {
-				setIsLoading(true);
-				try {
-					const dirs = await fetchSettings();
-					if (dirs && dirs.length > 0) {
-						const nodes: DirectoryNode[] = dirs.map((dir: string) => ({
-							name: dir,
-							path: dir,
-							type: "dir",
-							size: 0,
-							sha: "",
-							children: undefined,
-							expanded: false,
-						}));
-						setRootContents(nodes);
-					} else {
-						setRootContents([]);
-					}
-				} catch (err) {
-					console.error("Error reloading:", err);
-				} finally {
-					setIsLoading(false);
-				}
-			};
-			reload();
+			loadFileTree();
 		};
 
 		window.addEventListener("project-settings-updated", handleSettingsUpdate);
@@ -236,74 +151,35 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 				handleSettingsUpdate,
 			);
 		};
-	}, [fetchSettings, loadDirectoryContents]);
+	}, [loadFileTree]);
 
-	const toggleDirectory = async (dirPath: string) => {
+	const toggleDirectory = (dirPath: string) => {
 		const isExpanded = expandedDirs.has(dirPath);
 		const newExpandedDirs = new Set(expandedDirs);
 
 		if (isExpanded) {
 			newExpandedDirs.delete(dirPath);
-			setRootContents((prevTree) => {
-				const updateNode = (nodes: DirectoryNode[]): DirectoryNode[] => {
-					return nodes.map((node) => {
-						if (node.path === dirPath) {
-							return {
-								...node,
-								expanded: false,
-							};
-						}
-						if (node.children) {
-							return {
-								...node,
-								children: updateNode(node.children),
-							};
-						}
-						return node;
-					});
-				};
-				return updateNode(prevTree);
-			});
 		} else {
 			newExpandedDirs.add(dirPath);
-			try {
-				const isPendingDir = pendingCreates.some(
-					(p) => p.path === dirPath && p.type === "folder",
-				);
-
-				let contents: FileItem[] = [];
-				if (!isPendingDir) {
-					contents = await loadDirectoryContents(dirPath);
-				}
-
-				setRootContents((prevTree) => {
-					const updateNode = (nodes: DirectoryNode[]): DirectoryNode[] => {
-						return nodes.map((node) => {
-							if (node.path === dirPath && node.type === "dir") {
-								return {
-									...node,
-									children: buildTree(contents, dirPath),
-									expanded: true,
-								};
-							}
-							if (node.children) {
-								return {
-									...node,
-									children: updateNode(node.children),
-								};
-							}
-							return node;
-						});
-					};
-					return updateNode(prevTree);
-				});
-			} catch (err) {
-				console.error("Failed to load directory contents:", err);
-				return;
-			}
 		}
 
 		setExpandedDirs(newExpandedDirs);
+
+		// Update tree expanded state
+		setRootContents((prevTree) => {
+			const updateNode = (nodes: DirectoryNode[]): DirectoryNode[] => {
+				return nodes.map((node) => {
+					if (node.path === dirPath) {
+						return { ...node, expanded: !isExpanded };
+					}
+					if (node.children) {
+						return { ...node, children: updateNode(node.children) };
+					}
+					return node;
+				});
+			};
+			return updateNode(prevTree);
+		});
 	};
 
 	const handleFileClick = (file: DirectoryNode) => {
@@ -339,8 +215,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		return () => document.removeEventListener("click", handleClick);
 	}, []);
 
-	const [isCreating, setIsCreating] = useState(false);
-
 	const validateFileName = (name: string, convention: string) => {
 		switch (convention) {
 			case "kebab-case":
@@ -362,7 +236,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
 		try {
 			// Find applicable config
-			const config = repoConfig.find(c => fullPath.startsWith(c.path + "/") || fullPath === c.path || createPath === c.path);
+			const config = repoConfig.find(
+				(c) =>
+					fullPath.startsWith(c.path + "/") ||
+					fullPath === c.path ||
+					createPath === c.path,
+			);
 
 			if (createType === "file" && config?.naming_convention) {
 				// Remove extension
@@ -370,8 +249,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 					? newItemName.split(".").slice(0, -1).join(".")
 					: newItemName;
 
-				if (!validateFileName(nameWithoutExt, config.naming_convention)) {
-					throw new Error(`File name must follow ${config.naming_convention} convention`);
+				if (
+					!validateFileName(nameWithoutExt, config.naming_convention)
+				) {
+					throw new Error(
+						`File name must follow ${config.naming_convention} convention`,
+					);
 				}
 			}
 
@@ -383,14 +266,28 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 					if (config?.schema) {
 						try {
 							const yaml = await import("yaml");
-							const frontmatter: Record<string, string> = {};
+							const frontmatter: Record<string, any> = {};
 
-							Object.entries(config.schema).forEach(([key, value]: [string, any]) => {
-								// Default placeholders
-								frontmatter[key] = "";
-							});
+							Object.entries(config.schema).forEach(
+								([key, schema]: [string, any]) => {
+									if (schema.type === "date") {
+										frontmatter[key] = new Date()
+											.toISOString()
+											.split("T")[0];
+									} else if (schema.type === "string") {
+										let placeholder = "";
+										if (schema.min)
+											placeholder = "x".repeat(schema.min);
+										frontmatter[key] = placeholder || "";
+									} else if (schema.type === "boolean") {
+										frontmatter[key] = false;
+									} else {
+										frontmatter[key] = "";
+									}
+								},
+							);
 
-							initialContent = `---\n${yaml.stringify(frontmatter)}---\n`;
+							initialContent = `---\n${yaml.stringify(frontmatter)}---\n\n# New Content\n`;
 						} catch (e) {
 							console.warn("Failed to generate frontmatter", e);
 						}
@@ -409,16 +306,13 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 						const errData = await response.json();
 						throw new Error(errData.message || response.statusText);
 					}
+					// Reload tree to show new file
+					loadFileTree();
 				} else {
 					alert(
 						"Cannot create empty folder on server. Please create a file inside it.",
 					);
 					return;
-				}
-				const contents = await loadDirectoryContents();
-				// Refresh to show new file (simplified, usually we'd reload the specific dir)
-				if (createPath) {
-					await toggleDirectory(createPath);
 				}
 			}
 
@@ -485,10 +379,11 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		return nodesToRender.map((node) => (
 			<div key={node.path}>
 				<div
-					className={`group flex items-center px-2 py-1 rounded-md transition-all duration-200 ${selectedFile?.path === node.path
-						? "bg-earth-100 text-earth-500 cursor-default shadow-sm"
-						: "text-earth-400 cursor-pointer hover:bg-earth-50 hover:text-earth-500 hover:shadow-sm hover:scale-[1.02]"
-						} ${node.isPending ? "opacity-70 italic" : ""}`}
+					className={`group flex items-center px-2 py-1 rounded-md transition-all duration-200 ${
+						selectedFile?.path === node.path
+							? "bg-earth-100 text-earth-500 cursor-default shadow-sm"
+							: "text-earth-400 cursor-pointer hover:bg-earth-50 hover:text-earth-500 hover:shadow-sm hover:scale-[1.02]"
+					} ${node.isPending ? "opacity-70 italic" : ""}`}
 					style={{
 						paddingLeft: `${level * 16 + 8}px`,
 					}}
@@ -497,8 +392,9 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 				>
 					{node.type === "dir" ? (
 						<svg
-							className={`w-4 h-4 mr-2 transition-transform ${node.expanded ? "rotate-90" : ""
-								}`}
+							className={`w-4 h-4 mr-2 transition-transform ${
+								expandedDirs.has(node.path) ? "rotate-90" : ""
+							}`}
 							fill="none"
 							stroke="currentColor"
 							viewBox="0 0 24 24"
@@ -592,9 +488,12 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 					)}
 				</div>
 
-				{node.type === "dir" && node.expanded && (
-					<div>{renderTree(node.children || [], level + 1, node.path)}</div>
-				)}
+				{node.type === "dir" &&
+					expandedDirs.has(node.path) &&
+					node.children &&
+					node.children.length > 0 && (
+						<div>{renderTree(node.children, level + 1, node.path)}</div>
+					)}
 			</div>
 		));
 	};
@@ -607,10 +506,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 		);
 	}
 
-	if (
-		settingsLoaded &&
-		(!repoConfig || repoConfig.length === 0)
-	) {
+	if (settingsLoaded && (!repoConfig || repoConfig.length === 0)) {
 		return (
 			<div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
 				<div className="w-12 h-12 bg-earth-100 rounded-full flex items-center justify-center mb-4">
@@ -649,10 +545,15 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	return (
 		<div className="flex-1 flex flex-col">
-
 			{/* File Tree */}
 			<div className="flex-1 overflow-y-auto p-2">
-				{renderTree(rootContents)}
+				{rootContents.length === 0 ? (
+					<div className="text-center py-8 text-earth-300">
+						No files found in allowed directories.
+					</div>
+				) : (
+					renderTree(rootContents)
+				)}
 			</div>
 
 			{/* Context Menu */}
@@ -770,16 +671,15 @@ const FileExplorer: React.FC<FileExplorerProps> = ({
 											d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 										></path>
 									</svg>
-								)}
-								Create
-							</button>
+									)}
+									Create
+								</button>
+							</div>
 						</div>
 					</div>
-				</div>
-			)}
-		</div>
-	);
-};
+				)}
+			</div>
+		);
+	};
 
 export default FileExplorer;
-

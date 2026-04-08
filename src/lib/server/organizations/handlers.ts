@@ -10,6 +10,10 @@ export const getAllOrgsHandler = async (c: Context) => {
     try {
         const user = c.get("user");
         const orgs = await orgService.getAllOrgs(user.id);
+
+        // Cache org list for 30 seconds with stale-while-revalidate
+        // Orgs don't change frequently but can be updated by other users
+        c.header("Cache-Control", "private, max-age=30, stale-while-revalidate=300");
         return c.json(success(orgs));
     } catch (err: any) {
         return c.json(error(err.message), err.statusCode || 500);

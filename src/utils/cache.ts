@@ -171,6 +171,157 @@ export function createCachedFetcher<T, P extends string = string>(
 	};
 }
 
+// In-memory cache for SWR (client-side only)
+type SWRCacheEntry<T> = {
+	data: T;
+	timestamp: number;
+	isStale: boolean;
+};
+
+const swrMemoryCache = new Map<string, SWRCacheEntry<unknown>>();
+
+/**
+ * Creates a Stale-While-Revalidate fetcher for client-side caching.
+ * Returns cached data immediately if available, then refreshes in background.
+ *
+ * @example
+ * ```ts
+ * const projectsSWR = createSWRFetcher({
+ *   key: 'user-projects',
+ *   fetcher: async (userId) => {
+ *     const response = await fetch(`/api/projects?userId=${userId}`);
+ *     return response.json();
+ *   },
+ *   maxAge: 30000,      // Consider fresh for 30 seconds
+ *   staleTime: 300000,  // Serve stale for 5 minutes
+ * });
+ *
+ * // Use in component
+ * const projects = await projectsSWR.fetch(userId);
+ * ```
+ */
+export interface SWROptions<T, P = string> {
+	key: string;
+	fetcher: (param: P) => Promise<T>;
+	maxAge?: number; // Time in ms to consider data fresh (default: 30s)
+	staleTime?: number; // Time in ms to serve stale data while revalidating (default: 5min)
+}
+
+export function createSWRFetcher<T, P extends string = string>(
+	options: SWROptions<T, P>,
+) {
+	const { key, fetcher, maxAge = 30000, staleTime = 300000 } = options;
+
+	const getCacheKey = (param: P) => `${key}:${param}`;
+
+	return {
+		/**
+		 * Fetches data using SWR pattern:
+		 * - Returns cached data immediately if not expired
+		 * - Returns stale data and revalidates in background if within staleTime
+		 * - Fetches fresh data if cache is expired
+		 */
+		async fetch(param: P): Promise<T> {
+			const cacheKey = getCacheKey(param);
+			const cached = swrMemoryCache.get(cacheKey) as
+				| SWRCacheEntry<T>
+				| undefined;
+			const now = Date.now();
+
+			if (cached) {
+				const age = now - cached.timestamp;
+
+				// Data is fresh - return immediately
+				if (age < maxAge) {
+					return cached.data;
+				}
+
+				// Data is stale but within staleTime - return stale data and revalidate
+				if (age < maxAge + staleTime) {
+					// Trigger background revalidation
+					this.revalidate(param).catch((err) => {
+						console.warn(`[SWR] Background revalidation failed for ${cacheKey}:`, err);
+					});
+					return cached.data;
+				}
+
+				// Data is expired - remove from cache and fetch fresh
+				swrMemoryCache.delete(cacheKey);
+			}
+
+			// No cache or expired - fetch fresh data
+			return this.revalidate(param);
+		},
+
+		/**
+		 * Force revalidation - fetches fresh data and updates cache
+		 */
+		async revalidate(param: P): Promise<T> {
+			const cacheKey = getCacheKey(param);
+
+			try {
+				const freshData = await fetcher(param);
+
+				// Update cache
+				swrMemoryCache.set(cacheKey, {
+					data: freshData,
+					timestamp: Date.now(),
+					isStale: false,
+				});
+
+				return freshData;
+			} catch (error) {
+				// On error, try to return stale data if available
+				const cached = swrMemoryCache.get(cacheKey) as SWRCacheEntry<T> | undefined;
+				if (cached) {
+					console.warn(`[SWR] Fetch failed, returning stale data for ${cacheKey}`);
+					return cached.data;
+				}
+				throw error;
+			}
+		},
+
+		/**
+		 * Gets cached data without triggering revalidation
+		 */
+		peek(param: P): T | undefined {
+			const cacheKey = getCacheKey(param);
+			const cached = swrMemoryCache.get(cacheKey) as SWRCacheEntry<T> | undefined;
+			return cached?.data;
+		},
+
+		/**
+		 * Invalidates cache for a specific param
+		 */
+		invalidate(param: P): void {
+			const cacheKey = getCacheKey(param);
+			swrMemoryCache.delete(cacheKey);
+		},
+
+		/**
+		 * Invalidates all cache entries for this key
+		 */
+		invalidateAll(): void {
+			const prefix = `${key}:`;
+			for (const cacheKey of swrMemoryCache.keys()) {
+				if (cacheKey.startsWith(prefix)) {
+					swrMemoryCache.delete(cacheKey);
+				}
+			}
+		},
+
+		/**
+		 * Gets the age of cached data in milliseconds
+		 */
+		getAge(param: P): number | null {
+			const cacheKey = getCacheKey(param);
+			const cached = swrMemoryCache.get(cacheKey) as SWRCacheEntry<T> | undefined;
+			if (!cached) return null;
+			return Date.now() - cached.timestamp;
+		},
+	};
+}
+
 /**
  * Usage Examples:
  *

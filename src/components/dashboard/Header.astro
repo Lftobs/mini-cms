@@ -18,14 +18,35 @@ const { currentUser } = Astro.props;
 
 			<div class="user relative" x-data="{ userMenuOpen: false }">
 				<button
-					class="w-10 h-10 rounded-full overflow-hidden cursor-pointer p-0 border-2 border-earth-100 hover:border-earth-200 transition-colors bg-transparent"
+					class="w-10 h-10 rounded-full overflow-hidden cursor-pointer p-0 border-2 border-earth-100 hover:border-earth-200 transition-colors bg-earth-50 flex items-center justify-center shadow-inner"
 					x-on:click="userMenuOpen = !userMenuOpen"
 				>
-					<img
-						src={currentUser?.pfp}
-						alt="User pfp"
-						class="w-full h-full object-cover"
-					/>
+					{
+						currentUser?.pfp ? (
+							<img
+								src={currentUser?.pfp}
+								alt="User pfp"
+								class="w-full h-full object-cover"
+							/>
+						) : (
+							<div class="w-full h-full flex items-center justify-center bg-earth-100 text-earth-300">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-6 w-6"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+									/>
+								</svg>
+							</div>
+						)
+					}
 				</button>
 
 				<div
@@ -38,11 +59,32 @@ const { currentUser } = Astro.props;
 					<div
 						class="flex items-center px-4 py-3 border-b border-earth-100 mb-2"
 					>
-						<img
-							src={currentUser?.pfp}
-							alt="User pfp"
-							class="w-9 h-9 rounded-full mr-3"
-						/>
+						{
+							currentUser?.pfp ? (
+								<img
+									src={currentUser?.pfp}
+									alt="User pfp"
+									class="w-9 h-9 rounded-full mr-3 object-cover"
+								/>
+							) : (
+								<div class="w-9 h-9 rounded-full mr-3 bg-earth-100 flex items-center justify-center text-earth-300">
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										class="h-5 w-5"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke="currentColor"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+										/>
+									</svg>
+								</div>
+							)
+						}
 						<div class="overflow-hidden">
 							<p
 								class="font-semibold text-sm text-earth-400 m-0 truncate"

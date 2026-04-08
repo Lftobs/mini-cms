@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { auth } from "./server/auth";
 import { orgs } from "./server/organizations";
 import { projectRoutes } from "./server/projects";
+import { dashboardRoutes } from "./server/dashboard";
 
 import { authMiddleware } from "./server/shared/middleware";
 
@@ -29,6 +30,7 @@ const routes = app
 	.route("/projects", projectRoutes)
 	.route("/orgs", orgs)
 	.route("/auth", auth)
+	.route("/dashboard", dashboardRoutes)
 	.get("/health", (c: Context) => c.json({ message: "Mini-cms server is healthy" }));
 
 // serve({

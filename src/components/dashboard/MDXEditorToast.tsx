@@ -1,7 +1,5 @@
-import { Editor } from "@toast-ui/react-editor";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import "@toast-ui/editor/dist/toastui-editor.css";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { actions } from "astro:actions";
 import api from "@/lib/clients";
 import CommitPanel from "./CommitPanel.tsx";
@@ -54,8 +52,12 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 	const [isCommitPanelOpen, setIsCommitPanelOpen] = useState(false);
 	const [drafts, setDrafts] = useState<Record<string, DraftData>>({});
 	const [mdxError, setMdxError] = useState<string | null>(null);
+	const [repoConfig, setRepoConfig] = useState<any[]>([]);
+	const [schemaErrors, setSchemaErrors] = useState<string[]>([]);
 	const [isMounted, setIsMounted] = useState(false);
+	const [EditorComponent, setEditorComponent] = useState<any>(null);
 	const [editorRef, setEditorRef] = useState<any>(null);
+	const validationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 	const [showDraftModal, setShowDraftModal] = useState(false);
 	const [pendingDraft, setPendingDraft] = useState<{
 		content: string;
@@ -65,17 +67,6 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 	const [pendingCreates, setPendingCreates] = useState<
 		Array<{ path: string; type: "file" | "folder" }>
 	>([]);
-
-	// Mount tracking for hydration fix
-	useEffect(() => {
-		// console.log("[MDXEditorToast] Component mounted", {
-		// 	projectId,
-		// 	repoOwner,
-		// 	repoName,
-		// });
-		setIsMounted(true);
-	}, [projectId, repoOwner, repoName]);
-
 
 	useEffect(() => {
 		const savedDrafts = localStorage.getItem(`mdx-drafts-${projectId}`);
@@ -94,6 +85,116 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 			localStorage.setItem(`mdx-drafts-${projectId}`, JSON.stringify(drafts));
 		}
 	}, [drafts, projectId]);
+
+	// Fetch repo config for validation
+	useEffect(() => {
+		const fetchConfig = async () => {
+			try {
+				const response = await (api.projects as any)[projectId].repo[repoOwner][repoName].config.$get();
+				if (response.ok) {
+					const data = await response.json();
+					setRepoConfig(data.data);
+				}
+			} catch (err) {
+				console.error("Failed to fetch repo config:", err);
+			}
+		};
+		fetchConfig();
+	}, [projectId, repoOwner, repoName]);
+
+	const validateContent = useCallback(async (content: string, path: string) => {
+		const config = repoConfig.find(c => path.startsWith(c.path + "/") || path === c.path);
+		if (!config?.schema) {
+			setSchemaErrors([]);
+			return;
+		}
+
+		const errors: string[] = [];
+		const match = content.match(/^---\n([\s\S]*?)\n---/);
+
+		if (!match) {
+			errors.push("Missing frontmatter (---) correctly positioned at the start.");
+			setSchemaErrors(errors);
+			return;
+		}
+
+		try {
+			const YAML = (await import("yaml")).default;
+			const frontmatter = YAML.parse(match[1]);
+
+			Object.entries(config.schema).forEach(([key, schema]: [string, any]) => {
+				const value = frontmatter[key];
+
+				if (value === undefined || value === null || value === "") {
+					errors.push(`Field "${key}" is required.`);
+					return;
+				}
+
+				if (schema.type === "string") {
+					const strValue = String(value);
+					if (schema.min && strValue.length < schema.min) {
+						errors.push(`"${key}" must be at least ${schema.min} characters.`);
+					}
+					if (schema.max && strValue.length > schema.max) {
+						errors.push(`"${key}" must be at most ${schema.max} characters.`);
+					}
+				} else if (schema.type === "date") {
+					const date = new Date(value);
+					if (isNaN(date.getTime())) {
+						errors.push(`"${key}" must be a valid date.`);
+					}
+					if (schema.format) {
+						// Simple format check (e.g. YYYY-MM-DD vs YYYY/MM/DD)
+						if (schema.format === "YYYY-MM-DD" && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+							errors.push(`"${key}" must be in YYYY-MM-DD format.`);
+						}
+					}
+				}
+			});
+		} catch (e) {
+			errors.push("Invalid YAML in frontmatter.");
+		}
+
+		setSchemaErrors(errors);
+	}, [repoConfig]);
+
+	// Mount tracking and dynamic editor loading
+	useEffect(() => {
+		setIsMounted(true);
+
+		const loadEditor = async () => {
+			try {
+				const [editorModule] = await Promise.all([
+					import("@toast-ui/react-editor"),
+					import("@toast-ui/editor/dist/toastui-editor.css"),
+				]);
+				setEditorComponent(() => editorModule.Editor);
+			} catch (err) {
+				console.error("Failed to load editor modules:", err);
+				setError("Failed to load editor component");
+			}
+		};
+
+		loadEditor();
+	}, [projectId, repoOwner, repoName]);
+
+	useEffect(() => {
+		if (selectedFile) {
+			if (validationTimeoutRef.current) {
+				clearTimeout(validationTimeoutRef.current);
+			}
+
+			validationTimeoutRef.current = setTimeout(() => {
+				validateContent(fileContent, selectedFile.path);
+			}, 500); // 500ms debounce
+		}
+
+		return () => {
+			if (validationTimeoutRef.current) {
+				clearTimeout(validationTimeoutRef.current);
+			}
+		};
+	}, [fileContent, selectedFile, validateContent]);
 
 	const loadFileContent = useCallback(
 		async (file: FileItem) => {
@@ -260,6 +361,10 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 			}[],
 		) => {
 			try {
+				if (schemaErrors.length > 0) {
+					alert("Please fix schema errors before committing.");
+					return;
+				}
 
 				const allFilesToCommit = [...filesToCommit];
 
@@ -349,6 +454,7 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 			selectedFile,
 			fileContent,
 			pendingCreates,
+			schemaErrors
 		],
 	);
 
@@ -424,6 +530,14 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 								<span className="text-sm text-orange-600">Unsaved changes</span>
 							</div>
 						)}
+						{schemaErrors.length > 0 && (
+							<div className="flex items-center space-x-2 bg-red-50 px-2 py-1 rounded border border-red-100">
+								<svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+									<path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+								</svg>
+								<span className="text-xs text-red-600 font-medium">Schema Mismatch</span>
+							</div>
+						)}
 					</div>
 					<div className="flex items-center space-x-2">
 						{hasUnsavedChanges && (
@@ -456,10 +570,17 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 							</button>
 						)}
 						<button
-							onClick={() => setIsCommitPanelOpen(true)}
+							onClick={() => {
+								if (schemaErrors.length > 0) {
+									alert("Please fix schema errors: \n" + schemaErrors.join("\n"));
+									return;
+								}
+								setIsCommitPanelOpen(true);
+							}}
 							disabled={
 								!isMounted ||
-								(getUnsavedFiles().length === 0 && pendingCreates.length === 0)
+								(getUnsavedFiles().length === 0 && pendingCreates.length === 0) ||
+								schemaErrors.length > 0
 							}
 							className="px-4 py-1.5 text-sm bg-earth-300 text-white rounded-md hover:bg-earth-500 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
 						>
@@ -471,12 +592,24 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 				</div>
 
 				{/* Editor Content */}
-				<div className="flex-1 overflow-hidden">
+				<div className="flex-1 overflow-hidden flex flex-col">
 					{error && (
 						<div className="p-4 bg-red-50 border-l-4 border-red-400">
 							<div className="text-red-700">{error}</div>
 						</div>
 					)}
+
+					{schemaErrors.length > 0 && (
+						<div className="px-4 py-2 bg-red-50 border-b border-red-100">
+							<h5 className="text-xs font-bold text-red-800 uppercase tracking-wider mb-1">Schema Errors:</h5>
+							<ul className="list-disc list-inside">
+								{schemaErrors.map((err, i) => (
+									<li key={i} className="text-xs text-red-700">{err}</li>
+								))}
+							</ul>
+						</div>
+					)}
+
 
 					{mdxError && (
 						<div className="p-4 bg-yellow-50 border-l-4 border-yellow-400">
@@ -534,15 +667,35 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 					)}
 
 					{isLoading ? (
-						<div className="flex items-center justify-center h-full">
-							<div className="text-earth-300">Loading...</div>
+						<div className="flex flex-col items-center justify-center h-full space-y-4">
+							<svg
+								className="animate-spin h-10 w-10 text-earth-400"
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									className="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									strokeWidth="4"
+								></circle>
+								<path
+									className="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+								></path>
+							</svg>
+							<div className="text-earth-300 font-medium anim-pulse">Loading file content...</div>
 						</div>
 					) : selectedFile ? (
 						<div className="h-full">
-							{isMounted ? (
+							{isMounted && EditorComponent ? (
 								// Toast UI Editor
 								<div className="h-full">
-									<Editor
+									<EditorComponent
 										ref={setEditorRef}
 										initialValue={fileContent}
 										previewStyle="vertical"
@@ -570,8 +723,28 @@ const MDXEditorToast: React.FC<MDXEditorProps> = ({
 								</div>
 							) : (
 								// Loading state during hydration
-								<div className="flex items-center justify-center h-full">
-									<div className="text-earth-300">Loading editor...</div>
+								<div className="flex flex-col items-center justify-center h-full space-y-4">
+									<svg
+										className="animate-spin h-8 w-8 text-earth-300"
+										xmlns="http://www.w3.org/2000/svg"
+										fill="none"
+										viewBox="0 0 24 24"
+									>
+										<circle
+											className="opacity-25"
+											cx="12"
+											cy="12"
+											r="10"
+											stroke="currentColor"
+											strokeWidth="4"
+										></circle>
+										<path
+											className="opacity-75"
+											fill="currentColor"
+											d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+										></path>
+									</svg>
+									<div className="text-earth-300 font-medium anim-pulse">Preparing editor...</div>
 								</div>
 							)}
 						</div>

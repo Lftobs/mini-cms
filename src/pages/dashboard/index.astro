@@ -1,11 +1,11 @@
 ---
 import { actions } from "astro:actions";
 import GitHubInstallationAlert from "@/components/dashboard/GitHubInstallationAlert.astro";
-import DashboardLayout from "@/layouts/DashboardNewLayout.astro";
-import {$orgState, currentOrgIdState } from "@/store/navStore";
-import { userProjects } from "@/utils/cachedFn";
+import { userProjectsSWR } from "@/utils/cachedFn";
 import { calculateActivityGrowth } from "@/lib/server/shared/utils";
-import type { ProjectActivity } from "@/lib/server/shared/types";
+import DashboardMain from "@/components/dashboard/DashboardMain.tsx";
+import DashboardLayout from "@/layouts/DashboardNewLayout.astro";
+import { $orgState, currentOrgIdState } from "@/store/navStore";
 
 export const prerender = false;
 
@@ -47,7 +47,6 @@ let userOrgs = [];
 const { data, error } = await Astro.callAction(actions.orgsActions.getOrgs, {});
 if (!error && data) {
 	userOrgs = data;
-	$orgState.set(data)
 }
 
 const orgIdParam = Astro.url.searchParams.get("org");
@@ -56,7 +55,7 @@ let currentOrg = null;
 if (orgIdParam && Array.isArray(userOrgs) && userOrgs.length > 0) {
 	currentOrg = userOrgs.find((org) => org.id.toString() === orgIdParam);
 	if (currentOrg) {
-		currentOrgIdState.set(currentOrg.id);
+		// State will be handled client-side in DashboardMain
 	}
 }
 
@@ -69,7 +68,6 @@ if (!currentOrg && !orgIdParam) {
 
 if (!currentOrg && Array.isArray(userOrgs) && userOrgs.length > 0) {
 	currentOrg = userOrgs[0];
-	currentOrgIdState.set(currentOrg.id);
 
 	return Astro.redirect("/dashboard?org=" + currentOrg.id);
 }
@@ -78,44 +76,7 @@ const userName = currentUser?.username;
 
 const needsGitHubInstallation = !currentOrg?.installationId;
 
-let projects: any[] = [];
-let hasMoreProjects = false;
-if (currentOrg && userId) {
-	try {
-		const projectsResponse = await userProjects.fetch(userId);
-		const projectsData = projectsResponse?.data;
-		if (projectsData) {
-			const orgProjects = projectsData.filter(
-				(project: { org_id: any; }) => project.org_id === currentOrg.id,
-			);
-			hasMoreProjects = orgProjects.length > 6;
-			// display first 6 - TODO: implement pagination or a view all projects button in the required component
-			projects = orgProjects.slice(0, 6);
-		}
-	} catch (error) {
-		console.error("Error fetching projects:", error);
-	}
-}
-
-let allProjectActivities: ProjectActivity[] = [];
-if (projects.length > 0) {
-	try {
-		const activityPromises = projects.map((p) =>
-			Astro.callAction(actions.projectsActions.getProjectActivity, {
-				projectId: p.id,
-			}),
-		);
-		const activityResults = await Promise.all(activityPromises);
-		allProjectActivities = activityResults
-			.map((res) => res.data)
-			.flat()
-			.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-	} catch (error) {
-		console.error("Error fetching project activities:", error);
-	}
-}
-
-const { growth: activityGrowth, sign: growthSign } = calculateActivityGrowth(allProjectActivities);
+// Activity stats are now fetched client-side in the DashboardStats component
 ---
 
 <DashboardLayout userOrgs={userOrgs} currentOrg={currentOrg}>
@@ -130,411 +91,16 @@ const { growth: activityGrowth, sign: growthSign } = calculateActivityGrowth(all
 						currentOrgId={currentOrg?.id}
 					/>
 
-					{/* Welcome Section */}
-					<div class="bg-white rounded-lg shadow-sm border border-earth-100 p-6">
-						<h1 class="text-2xl font-semibold text-earth-400 mb-2">
-							Welcome back, {userName}!
-						</h1>
-						<p class="text-earth-300">
-							Here's what's happening with your projects in{" "}
-							<span class="inline-block bg-earth-accent-light/50 font-bold text-earth-500 px-2 py-1 rounded-full text-xs">
-								{currentOrg?.name || "your organization"}
-							</span>{" "}
-							today.
-						</p>
-					</div>
-
-					{/* Stats Cards */}
-					<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-						<div class="bg-white rounded-lg shadow-sm border border-earth-100 p-6">
-							<div class="flex items-center">
-								<div class="p-2 bg-earth-50 rounded-lg">
-									<svg
-										class="w-6 h-6 text-earth-400"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-										/>
-									</svg>
-								</div>
-								<div class="ml-4">
-									<p class="text-sm font-medium text-earth-200">
-										Total Projects
-									</p>
-									<p class="text-2xl font-semibold text-earth-400">
-										{projects.length ?? 0}
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="bg-white rounded-lg shadow-sm border border-earth-100 p-6">
-							<div class="flex items-center">
-								<div class="p-2 bg-earth-50 rounded-lg">
-									<svg
-										class="w-6 h-6 text-earth-400"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-										/>
-									</svg>
-								</div>
-								<div class="ml-4">
-									<p class="text-sm font-medium text-earth-200">
-										Published Content
-									</p>
-									<p class="text-2xl font-semibold text-earth-400">
-										{allProjectActivities?.length}
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="bg-white rounded-lg shadow-sm border border-earth-100 p-6">
-							<div class="flex items-center">
-								<div class="p-2 bg-earth-50 rounded-lg">
-									<svg
-										class="w-6 h-6 text-earth-400"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-										/>
-									</svg>
-								</div>
-								<div class="ml-4">
-									<p class="text-sm font-medium text-earth-200">
-										This Month
-									</p>
-									<p class={`text-2xl font-semibold ${activityGrowth >= 0 ? "text-green-600" : "text-earth-accent"}`}>
-										{growthSign}{activityGrowth}%
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					{/* Projects & Recent Activity */}
-					<div
-						class="bg-white rounded-lg shadow-sm border border-earth-100 p-6"
-						x-data="{ activeTab: 'projects' }"
-					>
-						<div class="flex items-center justify-between mb-4">
-							<h2 class="text-lg font-semibold text-earth-400">
-								Projects & Activity
-							</h2>
-							<div class="flex items-center space-x-4">
-								<div class="flex space-x-1 bg-earth-50 p-1 rounded-lg">
-									<button
-										class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
-									:class="activeTab === 'projects' ? 'bg-earth-50 text-earth-400' : ''"
-									@click="activeTab = 'projects'"
-								>
-									Projects
-								</button>
-								<button
-									class="px-3 py-1 text-sm font-medium rounded-md transition-colors"
-									:class="activeTab === 'activity' ? 'bg-white shadow-sm text-earth-500' : 'text-earth-400 hover:text-earth-500'"
-									@click="activeTab = 'activity'"
-								>
-									Activity
-								</button>
-							</div>
-							<button
-								x-show="activeTab === 'activity'"
-								@click="window.location.reload()"
-								class="p-2 text-earth-400 rounded-full hover:bg-earth-100 transition-colors"
-								title="Refresh activities"
-							>
-								<svg
-									class="w-4 h-4"
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.18-3.185m-3.181 0l-3.182-3.182m0 0a8.25 8.25 0 00-11.664 0l-3.18 3.185"
-									></path>
-								</svg>
-							</button>
-						</div>
-						</div>
-
-						{/* Projects View */}
-						<div x-show="activeTab === 'projects'" x-transition>
-							{projects.length > 0 && (
-								<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-									{projects.map((project) => (
-										<div class="bg-earth-50 rounded-lg p-3 border border-earth-100 hover:border-earth-200 transition-colors">
-											<div class="flex items-start justify-between">
-												<div class="flex-1">
-													<h3 class="font-medium text-earth-400 mb-1">
-														{project.name ||
-															"Unnamed Project"}
-													</h3>
-													<p class="text-sm text-earth-300">
-														{project.description ||
-															"No description"}
-													</p>
-												</div>
-												<div class="flex space-x-2 ml-2">
-													{project.github_repo_link && (
-														<a
-															href={
-																project.github_repo_link
-															}
-															target="_blank"
-															rel="noopener noreferrer"
-															class="inline-flex items-center px-2 py-1 text-xs font-medium text-earth-400 bg-white border border-earth-200 rounded-md hover:bg-earth-50 transition-colors"
-														>
-															<svg
-																class="w-3 h-3 mr-1"
-																fill="currentColor"
-																viewBox="0 0 24 24"
-															>
-																<path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-															</svg>
-															View Repo
-														</a>
-													)}
-													<a
-														href={`/dashboard/project/edit/${project.id}`}
-														class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-earth-400 border border-earth-400 rounded-md hover:bg-earth-300 transition-colors"
-													>
-														<svg
-															class="w-3 h-3 mr-1"
-															fill="none"
-															stroke="currentColor"
-															viewBox="0 0 24 24"
-														>
-															<path
-																stroke-linecap="round"
-																stroke-linejoin="round"
-																stroke-width="2"
-																d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-															/>
-														</svg>
-														Edit
-													</a>
-												</div>
-											</div>
-										</div>
-									))}
-								</div>
-							)}
-							{hasMoreProjects && projects.length > 0 && (
-								<div class="mt-4 text-center">
-									<a
-										href="/dashboard/projects"
-										class="inline-flex items-center px-4 py-2 text-sm font-medium text-earth-400 bg-earth-50 border border-earth-200 rounded-md hover:bg-earth-100 transition-colors"
-									>
-										<svg
-											class="w-4 h-4 mr-2"
-											fill="none"
-											stroke="currentColor"
-											viewBox="0 0 24 24"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												stroke-width="2"
-												d="M4 6h16M4 10h16M4 14h16M4 18h16"
-											/>
-										</svg>
-										View All Projects
-									</a>
-								</div>
-							)}
-							{projects.length === 0 && (
-								<div class="text-center py-8">
-									<svg
-										class="w-12 h-12 text-earth-200 mx-auto mb-4"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-										/>
-									</svg>
-									<p class="text-earth-300 mb-2">
-										No projects yet
-									</p>
-									<p class="text-sm text-earth-200">
-										Create your first project to get started
-									</p>
-								</div>
-							)}
-						</div>
-
-						{/* Recent Activity View */}
-						<div
-							x-show="activeTab === 'activity'"
-							x-transition
-							x-data={`{
-								activities: ${JSON.stringify(allProjectActivities)},
-								getRelativeTime(dateString) {
-									const date = new Date(dateString);
-									const now = new Date();
-									const diff = Math.round((now - date) / 1000); // seconds
-									if (diff < 60) return diff + 's ago';
-									if (diff < 3600) return Math.round(diff / 60) + 'mins ago';
-									if (diff < 86400) return Math.round(diff / 3600) + 'hrs ago';
-									return Math.round(diff / 86400) + 'days ago';
-								}
-							}`}
-							class="space-y-4"
-						>
-							<template x-if="activities.length > 0">
-								<div class="space-y-4">
-									<template
-										x-for="activity in activities"
-										:key="activity.id"
-									>
-										<div class="flex items-center space-x-3">
-											<div class="w-2 h-2 bg-earth-400 rounded-full">
-											</div>
-											<div class="flex-1">
-												<div class="flex items-center flex-wrap gap-1 text-sm text-earth-300">
-													<span x-text="activity.action_type"></span>
-													<span>on</span>
-													<span class="px-2 py-0.5 bg-yellow-100 font-semibold text-earth-500 rounded-full text-xs font-medium" x-text="activity.file_name"></span>
-													<template x-if="activity.contributor_name">
-														<div class="flex items-center gap-1">
-															<span>by</span>
-															<span class="px-2 py-0.5 bg-yellow-100 font-semibold text-earth-500 rounded-full text-xs font-medium" x-text="activity.contributor_name"></span>
-														</div>
-													</template>
-												</div>
-												<p
-													class="text-xs text-earth-200"
-													x-text="getRelativeTime(activity.created_at)"
-												>
-												</p>
-											</div>
-										</div>
-									</template>
-								</div>
-							</template>
-							<template x-if="activities.length === 0">
-								<div class="text-center py-8">
-									<svg
-										class="w-12 h-12 text-earth-200 mx-auto mb-4"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-										></path>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-										></path>
-									</svg>
-									<p class="text-earth-300 mb-2">
-										No recent activity
-									</p>
-									<p class="text-sm text-earth-200">
-										Recent project activities will appear
-										here.
-									</p>
-								</div>
-							</template>
-						</div>
-					</div>
-
-					{/* Quick Actions */}
-					<div class="bg-white rounded-lg shadow-sm border border-earth-100 p-6">
-						<h2 class="text-lg font-semibold text-earth-400 mb-4">
-							Quick Actions
-						</h2>
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<a
-								href={`/dashboard/project/new${orgIdParam ? `?org=${orgIdParam}` : ""}`}
-								class="flex items-center p-4 border border-earth-100 rounded-lg hover:bg-earth-50 transition-colors"
-							>
-								<svg
-									class="w-6 h-6 text-earth-400 mr-3"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-									/>
-								</svg>
-								<div>
-									<p class="font-medium text-earth-400">
-										Create New Project
-									</p>
-									<p class="text-sm text-earth-200">
-										Start a new content project
-									</p>
-								</div>
-							</a>
-
-							<a
-								href="/dashboard/org/new"
-								class="flex items-center p-4 border border-earth-100 rounded-lg hover:bg-earth-50 transition-colors"
-							>
-								<svg
-									class="w-6 h-6 text-earth-400 mr-3"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-									/>
-								</svg>
-								<div>
-									<p class="font-medium text-earth-400">
-										Create New Organization
-									</p>
-									<p class="text-sm text-earth-200">
-										Create a new organization to manage your
-										projects.
-									</p>
-								</div>
-							</a>
-						</div>
-					</div>
+					<DashboardMain 
+						client:load 
+						userId={userId!} 
+						currentOrg={currentOrg}
+						userOrgs={userOrgs} 
+						userName={userName || "User"}
+						installationSuccessMessage={installationSuccessMessage}
+						installationErrorMessage={installationErrorMessage}
+						needsGitHubInstallation={needsGitHubInstallation}
+					/>
 				</>
 			) : (
 				<div class="flex flex-col items-center justify-center min-h-[60vh] text-center">

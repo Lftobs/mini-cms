@@ -123,7 +123,12 @@ export class ProjectService {
             collaborator_message: settings?.collaborator_message ?? "Welcome! You can edit files in the allowed directories.",
         };
 
-        return await this.repository.upsertSettings(projectId, dbValues);
+        const upserted = await this.repository.upsertSettings(projectId, dbValues);
+        // Return directories as parsed objects, not just stringified
+        return {
+            ...upserted,
+            public_directories: githubConfig.allowed_directories ?? []
+        };
     }
 
     async updateProjectSettings(projectId: string, settings: any, userId: string) {
@@ -145,6 +150,7 @@ export class ProjectService {
             .replace(/\/$/, "")
             .split("/");
 
+        let existingConfig: any = {};
         let sha: string | undefined;
         try {
             const { data } = await octokit.rest.repos.getContent({
@@ -155,13 +161,17 @@ export class ProjectService {
             });
             if (!Array.isArray(data) && data.type === "file") {
                 sha = data.sha;
+                const content = Buffer.from(data.content, "base64").toString("utf-8");
+                existingConfig = YAML.parse(content);
             }
         } catch (e) {
-            // should exist if we called getProjectSettings first...TODO: log err
+            console.warn("Could not fetch existing config for merge, starting fresh");
         }
 
+        const newDirectories = settings.public_directories;
         const newConfig = {
-            allowed_directories: settings.public_directories ? JSON.parse(settings.public_directories) : [],
+            ...existingConfig,
+            allowed_directories: Array.isArray(newDirectories) ? newDirectories : JSON.parse(newDirectories || "[]"),
         };
 
         const configContent = YAML.stringify(newConfig);
@@ -176,7 +186,13 @@ export class ProjectService {
             sha,
         });
 
-        return await this.repository.upsertSettings(projectId, settings);
+        // Sync back to DB settings
+        const dbSettings = { ...settings };
+        if (typeof dbSettings.public_directories !== 'string') {
+            dbSettings.public_directories = JSON.stringify(dbSettings.public_directories);
+        }
+
+        return await this.repository.upsertSettings(projectId, dbSettings);
     }
 
     async getProjectActivity(projectId: string, page: number = 1, limit: number = 20, userId: string) {

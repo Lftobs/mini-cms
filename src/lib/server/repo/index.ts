@@ -7,6 +7,7 @@ import {
 	getDirectoryContentsHandler,
 	getFileContentHandler,
 	getRepoConfigHandler,
+	getRecursiveFileTreeHandler,
 	listReposHandler,
 } from "./handlers";
 
@@ -38,6 +39,7 @@ export const projectRepoRoutes = new Hono()
 		),
 		getDirectoryContentsHandler,
 	)
+	.get("/:owner/:repo/tree", getRecursiveFileTreeHandler)
 	.get("/:owner/:repo/config", getRepoConfigHandler)
 	.get("/:owner/:repo/file", getFileContentHandler)
 	.post(

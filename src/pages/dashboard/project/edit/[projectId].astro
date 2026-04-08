@@ -10,7 +10,7 @@ const currentUser = Astro.locals.currentUser;
 const userId = currentUser?.id;
 
 if (!userId) {
-	Astro.redirect("/login");
+	return Astro.redirect("/login");
 }
 
 const { projectId } = Astro.params;
@@ -101,6 +101,8 @@ if (!project.installationId) {
 						>
 							<svg
 								class="w-4 h-4"
+								width="16"
+								height="16"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
@@ -121,6 +123,8 @@ if (!project.installationId) {
 						</a>
 						<svg
 							class="w-4 h-4"
+							width="16"
+							height="16"
 							fill="currentColor"
 							viewBox="0 0 20 20"
 						>
@@ -140,6 +144,8 @@ if (!project.installationId) {
 						>
 							<svg
 								class="w-4 h-4 text-earth-500"
+								width="16"
+								height="16"
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
@@ -172,6 +178,8 @@ if (!project.installationId) {
 					>
 						<svg
 							class="w-4 h-4 mr-2"
+							width="16"
+							height="16"
 							fill="currentColor"
 							viewBox="0 0 24 24"
 						>
@@ -188,7 +196,7 @@ if (!project.installationId) {
 		<!-- MDX Editor Component -->
 		<div class="flex-1 overflow-hidden">
 			<MDXEditorMilkdown
-				client:only="react"
+				client:visible
 				projectId={projectId}
 				repoOwner={repoOwner}
 				repoName={repoName}

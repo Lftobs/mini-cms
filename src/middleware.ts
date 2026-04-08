@@ -96,9 +96,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
 });
 
 
-const publicRoutes = ["/", "/auth/login", "/api/auth", "/_astro", "/favicon.ico", "/sitemap-index.xml", "/sitemap-0.xml", "/docs", "/_actions"];
+const publicRoutes = ["/", "/auth/login", "/api/auth", "/_astro", "/favicon", "/img", "/favicon.ico", "/sitemap-index.xml", "/sitemap-0.xml", "/docs", "/_actions"];
 
 const isPublicRoute = (pathname: string) => {
+	// Allow common static assets explicitly
+	if (pathname.match(/\.(png|jpg|jpeg|gif|svg|ico|json|xml|txt|css|js|webp)$/) ||
+		pathname.startsWith("/favicon/") ||
+		pathname.startsWith("/android-icon") ||
+		pathname.startsWith("/apple-icon") ||
+		pathname.startsWith("/ms-icon")) {
+		return true;
+	}
+
 	return publicRoutes.some((route) => {
 		if (route === "/" && pathname === "/") return true;
 		if (route !== "/" && pathname === route) return true;

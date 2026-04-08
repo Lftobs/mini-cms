@@ -11,8 +11,10 @@ export const projectsActions = {
 	getProjectActivity: defineAction({
 		input: z.object({
 			projectId: z.string(),
+			page: z.number().optional().default(1),
+			limit: z.number().optional().default(20),
 		}),
-		handler: async ({ projectId }, context) => {
+		handler: async ({ projectId, page, limit }, context) => {
 			const userId = context.locals.currentUser?.id;
 			if (!userId) {
 				throw new ActionError({
@@ -26,8 +28,8 @@ export const projectsActions = {
 				const projectService = new ProjectService(projectRepository);
 				const activity = await projectService.getProjectActivity(
 					projectId,
-					1,
-					20,
+					page,
+					limit,
 					userId,
 				);
 				return activity;

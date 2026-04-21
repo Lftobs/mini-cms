@@ -75,8 +75,6 @@ if (!currentOrg && Array.isArray(userOrgs) && userOrgs.length > 0) {
 const userName = currentUser?.username;
 
 const needsGitHubInstallation = !currentOrg?.installationId;
-
-// Activity stats are now fetched client-side in the DashboardStats component
 ---
 
 <DashboardLayout userOrgs={userOrgs} currentOrg={currentOrg}>
@@ -91,11 +89,11 @@ const needsGitHubInstallation = !currentOrg?.installationId;
 						currentOrgId={currentOrg?.id}
 					/>
 
-					<DashboardMain 
-						client:load 
-						userId={userId!} 
+					<DashboardMain
+						client:load
+						userId={userId!}
 						currentOrg={currentOrg}
-						userOrgs={userOrgs} 
+						userOrgs={userOrgs}
 						userName={userName || "User"}
 						installationSuccessMessage={installationSuccessMessage}
 						installationErrorMessage={installationErrorMessage}

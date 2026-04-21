@@ -9,6 +9,8 @@ import {
 	getRepoConfigHandler,
 	getRecursiveFileTreeHandler,
 	listReposHandler,
+	uploadMediaHandler,
+	listMediaHandler,
 } from "./handlers";
 
 import { requireAuth } from "../shared/middleware";
@@ -42,6 +44,8 @@ export const projectRepoRoutes = new Hono()
 	.get("/:owner/:repo/tree", getRecursiveFileTreeHandler)
 	.get("/:owner/:repo/config", getRepoConfigHandler)
 	.get("/:owner/:repo/file", getFileContentHandler)
+	.get("/:owner/:repo/media", listMediaHandler)
+	.post("/:owner/:repo/media/upload", uploadMediaHandler)
 	.post(
 		"/:owner/:repo/create-file",
 		zValidator(

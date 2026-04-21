@@ -164,7 +164,6 @@ export const getRepoConfigHandler = async (c: Context) => {
 
     const config = await repoService.getRepoConfig(projectId, owner, repo);
 
-    // Cache repo config for 10 minutes - config changes infrequently
     c.header(
       "Cache-Control",
       "private, max-age=600, stale-while-revalidate=3600",
@@ -175,7 +174,6 @@ export const getRepoConfigHandler = async (c: Context) => {
   }
 };
 
-// Recursive file tree loading - loads all allowed directories in parallel
 export const getRecursiveFileTreeHandler = async (c: Context) => {
   try {
     const { owner, repo } = c.req.param();
@@ -208,6 +206,13 @@ export const getRecursiveFileTreeHandler = async (c: Context) => {
 
         const result = await Promise.all(
           contents.map(async (item: any) => {
+            // Filter: only keep directories and markdown files (.md, .mdx)
+            if (item.type === "file") {
+              const isMarkdown =
+                item.name.endsWith(".md") || item.name.endsWith(".mdx");
+              if (!isMarkdown) return null;
+            }
+
             const node = {
               name: item.name,
               path: item.path,
@@ -226,7 +231,8 @@ export const getRecursiveFileTreeHandler = async (c: Context) => {
           }),
         );
 
-        return result;
+        // Filter out null entries (non-markdown files)
+        return result.filter((node) => node !== null);
       } catch (err) {
         console.error(`[RecursiveTree] Error loading ${dirPath}:`, err);
         return [];
@@ -307,6 +313,156 @@ export const createFileHandler = async (c: Context) => {
       message,
     );
     return c.json(success(result), 201);
+  } catch (err: any) {
+    return c.json(error(err.message), err.statusCode || 500);
+  }
+};
+
+export const uploadMediaHandler = async (c: Context) => {
+  try {
+    const projectId = c.req.param("projectId");
+    const user = c.get("user");
+
+    if (!projectId) {
+      return c.json(error("Project ID is required"), 400);
+    }
+
+    await projectService.checkProjectAccess(projectId, user.id);
+
+    const body = await c.req.json();
+    const { files, mediaPath } = body;
+
+    if (!files || !Array.isArray(files) || files.length === 0) {
+      return c.json(error("Files array required"), 400);
+    }
+
+    // Get project to find repo details
+    const project = await projectService.getProject(projectId);
+    if (!project?.github_repo_link) {
+      return c.json(error("Project not found"), 404);
+    }
+
+    const [owner, repo] = project.github_repo_link
+      .replace("https://github.com/", "")
+      .split("/");
+
+    // Validate media path is allowed (should be a configured media base path)
+    const repoConfig = await repoService.getRepoConfig(projectId, owner, repo);
+    const allowedPaths = repoConfig.map((c: any) => c.path);
+
+    const isAllowedPath = allowedPaths.some(
+      (allowed: string) =>
+        mediaPath.startsWith(allowed) || mediaPath === allowed,
+    );
+
+    if (!isAllowedPath) {
+      return c.json(
+        error("Invalid media path. Must be within allowed directories."),
+        403,
+      );
+    }
+
+    const uploadedFiles = [];
+    for (const file of files) {
+      const { filename, content } = file;
+      const fullPath = `${mediaPath}/${filename}`;
+
+      const result = await repoService.bulkUpdateFiles(
+        projectId,
+        owner,
+        repo,
+        [
+          {
+            path: fullPath,
+            content: content,
+          },
+        ],
+        `Upload media: ${filename}`,
+      );
+
+      uploadedFiles.push({
+        filename,
+        path: fullPath,
+        url: `https://github.com/${owner}/${repo}/blob/mini-cms-flow/${fullPath}`,
+      });
+    }
+
+    return c.json(
+      success({
+        uploaded: uploadedFiles,
+        mediaPath,
+      }),
+      201,
+    );
+  } catch (err: any) {
+    return c.json(error(err.message), err.statusCode || 500);
+  }
+};
+
+// GET /media - List media files in the media base path
+export const listMediaHandler = async (c: Context) => {
+  try {
+    const projectId = c.req.param("projectId");
+    const mediaPath = c.req.query("path");
+    const user = c.get("user");
+
+    if (!projectId) {
+      return c.json(error("Project ID is required"), 400);
+    }
+
+    await projectService.checkProjectAccess(projectId, user.id);
+
+    const project = await projectService.getProject(projectId);
+    if (!project?.github_repo_link) {
+      return c.json(error("Project not found"), 404);
+    }
+
+    const [owner, repo] = project.github_repo_link
+      .replace("https://github.com/", "")
+      .split("/");
+
+    let targetPath = mediaPath;
+    if (!targetPath) {
+      const repoConfig = await repoService.getRepoConfig(
+        projectId,
+        owner,
+        repo,
+      );
+      const firstWithImagePath = repoConfig.find((c: any) => c.base_image_path);
+      targetPath = firstWithImagePath?.base_image_path || repoConfig[0]?.path;
+    }
+
+    if (!targetPath) {
+      return c.json(error("No media path configured"), 400);
+    }
+
+    // Get directory contents
+    const contents = await repoService.getDirectoryContents(
+      projectId,
+      owner,
+      repo,
+      targetPath,
+    );
+
+    // Filter for image files only
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
+    const mediaFiles = contents.filter((item: any) => {
+      const ext = item.name.toLowerCase().split(".").pop();
+      return item.type === "file" && imageExtensions.includes(`.${ext}`);
+    });
+
+    const filesWithUrls = mediaFiles.map((file: any) => ({
+      ...file,
+      rawUrl: `https://raw.githubusercontent.com/${owner}/${repo}/mini-cms-flow/${file.path}`,
+      githubUrl: `https://github.com/${owner}/${repo}/blob/mini-cms-flow/${file.path}`,
+    }));
+
+    return c.json(
+      success({
+        path: targetPath,
+        files: filesWithUrls,
+      }),
+    );
   } catch (err: any) {
     return c.json(error(err.message), err.statusCode || 500);
   }

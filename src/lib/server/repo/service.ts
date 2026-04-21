@@ -69,7 +69,7 @@ export class RepoService {
         projectId: string,
         owner: string,
         repo: string
-    ): Promise<{ path: string; schema?: any; naming_convention?: string }[]> {
+    ): Promise<{ path: string; schema?: any; naming_convention?: string; base_image_path?: string }[]> {
         try {
             const octokit = await this.getProjectOctokit(projectId);
             const { data: configData } = await octokit.rest.repos.getContent({
@@ -92,7 +92,12 @@ export class RepoService {
                     if (typeof item === "string") {
                         return { path: item };
                     }
-                    return item;
+                    return {
+                        path: item.path,
+                        schema: item.schema,
+                        naming_convention: item.naming_convention,
+                        base_image_path: item.base_image_path,
+                    };
                 });
             }
 

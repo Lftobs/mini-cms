@@ -42,16 +42,16 @@ export const projectRoutes = new Hono()
 		zValidator(
 			"json",
 			z.object({
-				public_directories: z.string(),
-				allow_file_creation: z.boolean(),
-				allow_file_editing: z.boolean(),
-				allow_file_deletion: z.boolean(),
-				require_approval: z.boolean(),
-				auto_merge: z.boolean(),
-				max_file_size: z.number(),
-				allowed_extensions: z.string(),
-				collaborator_message: z.string(),
-			}),
+				public_directories: z.union([z.string(), z.array(z.any())]),
+				allow_file_creation: z.boolean().optional(),
+				allow_file_editing: z.boolean().optional(),
+				allow_file_deletion: z.boolean().optional(),
+				require_approval: z.boolean().optional(),
+				auto_merge: z.boolean().optional(),
+				max_file_size: z.number().optional(),
+				allowed_extensions: z.string().optional(),
+				collaborator_message: z.string().optional(),
+			}).passthrough(), // Allow additional fields like base_image_path
 		),
 		updateProjectSettingsHandler,
 	)

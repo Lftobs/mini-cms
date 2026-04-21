@@ -39,8 +39,8 @@ importers:
         specifier: ^5.2.6
         version: 5.2.6
       '@hono/node-server':
-        specifier: ^1.13.8
-        version: 1.14.1(hono@4.12.14)
+        specifier: ^1.19.13
+        version: 1.19.13(hono@4.12.14)
       '@hono/zod-validator':
         specifier: ^0.4.3
         version: 0.4.3(hono@4.12.14)(zod@3.24.2)
@@ -841,8 +841,8 @@ packages:
   '@fontsource/space-grotesk@5.2.6':
     resolution: {integrity: sha512-Ejf50hUdoWYFkVdqckXxXuIY3tPgQZ/095EHa21uLBOuk7CQAlxqSdkPu5y47Xv+xa8A4TSrdAJlS9YdF5DqGg==}
 
-  '@hono/node-server@1.14.1':
-    resolution: {integrity: sha512-vmbuM+HPinjWzPe7FFPWMMQMsbKE9gDPhaH0FFdqbGpkT5lp++tcWDTxwBl5EgS5y6JVgIaCdjeHRfQ4XRBRjQ==}
+  '@hono/node-server@1.19.13':
+    resolution: {integrity: sha512-TsQLe4i2gvoTtrHje625ngThGBySOgSK3Xo2XRYOdqGN1teR8+I7vchQC46uLJi8OF62YTYA3AhSpumtkhsaKQ==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
@@ -4913,7 +4913,7 @@ snapshots:
 
   '@fontsource/space-grotesk@5.2.6': {}
 
-  '@hono/node-server@1.14.1(hono@4.12.14)':
+  '@hono/node-server@1.19.13(hono@4.12.14)':
     dependencies:
       hono: 4.12.14
 

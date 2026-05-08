@@ -40,10 +40,10 @@ importers:
         version: 5.2.6
       '@hono/node-server':
         specifier: ^1.13.8
-        version: 1.14.1(hono@4.12.14)
+        version: 1.14.1(hono@4.12.16)
       '@hono/zod-validator':
         specifier: ^0.4.3
-        version: 0.4.3(hono@4.12.14)(zod@3.24.2)
+        version: 0.4.3(hono@4.12.16)(zod@3.24.2)
       '@libsql/client':
         specifier: ^0.15.4
         version: 0.15.4
@@ -93,8 +93,8 @@ importers:
         specifier: ^1.12.0
         version: 1.12.0
       hono:
-        specifier: ^4.12.14
-        version: 4.12.14
+        specifier: ^4.12.16
+        version: 4.12.16
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
@@ -1799,6 +1799,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@upstash/redis@1.35.6':
     resolution: {integrity: sha512-aSEIGJgJ7XUfTYvhQcQbq835re7e/BXjs8Janq6Pvr6LlmTZnyqwT97RziZLO/8AVUL037RLXqqiQC6kCt+5pA==}
@@ -2599,8 +2600,8 @@ packages:
   hastscript@9.0.1:
     resolution: {integrity: sha512-g7df9rMFX/SPi34tyGCyUBREQoKkapwdY/T04Qn9TDWfHhAYt4/I0gMVirzK5wEzeUqIjEB+LXC/ypb7Aqno5w==}
 
-  hono@4.12.14:
-    resolution: {integrity: sha512-am5zfg3yu6sqn5yjKBNqhnTX7Cv+m00ox+7jbaKkrLMRJ4rAdldd1xPd/JzbBWspqaQv6RSTrgFN95EsfhC+7w==}
+  hono@4.12.16:
+    resolution: {integrity: sha512-jN0ZewiNAWSe5khM3EyCmBb250+b40wWbwNILNfEvq84VREWwOIkuUsFONk/3i3nqkz7Oe1PcpM2mwQEK2L9Kg==}
     engines: {node: '>=16.9.0'}
 
   html-escaper@3.0.3:
@@ -4913,13 +4914,13 @@ snapshots:
 
   '@fontsource/space-grotesk@5.2.6': {}
 
-  '@hono/node-server@1.14.1(hono@4.12.14)':
+  '@hono/node-server@1.14.1(hono@4.12.16)':
     dependencies:
-      hono: 4.12.14
+      hono: 4.12.16
 
-  '@hono/zod-validator@0.4.3(hono@4.12.14)(zod@3.24.2)':
+  '@hono/zod-validator@0.4.3(hono@4.12.16)(zod@3.24.2)':
     dependencies:
-      hono: 4.12.14
+      hono: 4.12.16
       zod: 3.24.2
 
   '@img/colour@1.0.0':
@@ -6830,7 +6831,7 @@ snapshots:
       property-information: 7.1.0
       space-separated-tokens: 2.0.2
 
-  hono@4.12.14: {}
+  hono@4.12.16: {}
 
   html-escaper@3.0.3: {}
 

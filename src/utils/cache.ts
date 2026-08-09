@@ -1,25 +1,17 @@
-import { Redis } from "@upstash/redis";
+import { getKV } from "../lib/server/shared/kv";
 
-const { UPSTASH_URL, UPSTASH_TOKEN } = import.meta.env;
-
-let redis: Redis | null = null;
-
-if (UPSTASH_URL && UPSTASH_TOKEN) {
-	redis = new Redis({
-		url: UPSTASH_URL,
-		token: UPSTASH_TOKEN,
-	});
-} else {
-	console.warn("[Cache] Redis credentials missing. Caching is disabled.");
-}
-
+/**
+ * Cache layer backed by Cloudflare KV.
+ *
+ * Note: Cloudflare KV is eventually consistent — writes may take up to ~60
+ * seconds to propagate globally. Cache reads may serve stale data briefly
+ * after a revalidate/invalidate.
+ */
 
 interface CacheItem<T> {
 	data: T;
 	lastUpdated: number;
 }
-
-type FetchFunction<T> = () => Promise<T>;
 
 /**
  * Creates a cached fetcher that can be reused and revalidated.
@@ -62,12 +54,13 @@ export function createCachedFetcher<T, P extends string = string>(
 		async fetch(param: P): Promise<T> {
 			const cacheKey = getCacheKey(param);
 
-			if (redis) {
+			const kv = getKV();
+			if (kv) {
 				try {
-					const cached = await redis.get<CacheItem<T>>(cacheKey);
+					const cached = await kv.get(cacheKey, "json");
 					if (cached) {
 						// console.log(`[Cache] Hit for ${cacheKey}`);
-						return cached.data;
+						return (cached as unknown as CacheItem<T>).data;
 					}
 				} catch (error) {
 					console.warn(
@@ -95,12 +88,15 @@ export function createCachedFetcher<T, P extends string = string>(
 					lastUpdated: Date.now(),
 				};
 
-				if (redis) {
+				const kv = getKV();
+				if (kv) {
 					try {
-						await redis.set(cacheKey, cacheItem, { ex: ttl });
+						await kv.put(cacheKey, JSON.stringify(cacheItem), {
+							expirationTtl: Math.max(60, ttl),
+						});
 					} catch (cacheError) {
 						console.warn(
-							`[Cache] Error writing to Redis for ${cacheKey}:`,
+							`[Cache] Error writing to KV for ${cacheKey}:`,
 							cacheError,
 						);
 					}
@@ -122,10 +118,11 @@ export function createCachedFetcher<T, P extends string = string>(
 		 */
 		async getLastUpdated(param: P): Promise<number | null> {
 			const cacheKey = getCacheKey(param);
-			if (!redis) return null;
+			const kv = getKV();
+			if (!kv) return null;
 			try {
-				const cached = await redis.get<CacheItem<T>>(cacheKey);
-				return cached?.lastUpdated ?? null;
+				const cached = await kv.get(cacheKey, "json");
+				return (cached as unknown as CacheItem<T> | null)?.lastUpdated ?? null;
 			} catch (error) {
 				console.warn(
 					`[Cache] Error getting last updated time for ${cacheKey}:`,
@@ -140,9 +137,10 @@ export function createCachedFetcher<T, P extends string = string>(
 		 */
 		async invalidate(param: P): Promise<void> {
 			const cacheKey = getCacheKey(param);
-			if (!redis) return;
+			const kv = getKV();
+			if (!kv) return;
 			try {
-				await redis.del(cacheKey);
+				await kv.delete(cacheKey);
 			} catch (error) {
 				console.warn(
 					`[Cache] Error invalidating cache for ${cacheKey}:`,
@@ -152,15 +150,33 @@ export function createCachedFetcher<T, P extends string = string>(
 		},
 
 		/**
-		 * Removes all cached items in this namespace
+		 * Removes all cached items in this namespace.
+		 *
+		 * KV has no wildcard delete: this lists keys by prefix and deletes them
+		 * in pages. Listing is eventually consistent, so keys written moments
+		 * ago may be missed. Best effort only.
 		 */
 		async invalidateAll(): Promise<void> {
-			if (!redis) return;
+			const kv = getKV();
+			if (!kv) return;
 			try {
-				const keys = await redis.keys(`${namespace}:*`);
-				if (keys.length > 0) {
-					await redis.del(...keys);
-				}
+				let cursor: string | undefined;
+				let deleted = 0;
+				do {
+					const page = await kv.list({
+						prefix: `${namespace}:`,
+						limit: 1000,
+						cursor,
+					});
+					for (const key of page.keys) {
+						await kv.delete(key.name);
+						deleted++;
+					}
+					cursor = page.list_complete ? undefined : page.cursor;
+				} while (cursor);
+				console.warn(
+					`[Cache] Invalidated ${deleted} keys in namespace ${namespace}`,
+				);
 			} catch (error) {
 				console.warn(
 					`[Cache] Error invalidating all cache for ${namespace}:`,

@@ -3,6 +3,8 @@ export interface RequestContext {
         cookie?: string;
         [key: string]: string | undefined;
     };
+    /** Cloudflare runtime env (vars, secrets and bindings). Populated by the Cloudflare adapter. */
+    env?: Record<string, unknown>;
 }
 
 

@@ -19,9 +19,9 @@ const authService = new AuthService(authRepository, orgService);
 
 export const onRequest = defineMiddleware(async (context, next) => {
 	const cookie = context.request.headers.get("cookie") || "";
+	const env = context.locals.runtime?.env;
 
-	return runWithContext({ headers: { cookie } }, async () => {
-		const pathname = context.url.pathname;
+	return runWithContext({ headers: { cookie }, env }, async () => {		const pathname = context.url.pathname;
 		const isPublic = isPublicRoute(pathname);
 
 		const accessToken = context.cookies.get("access_token")?.value;

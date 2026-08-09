@@ -5,6 +5,9 @@ declare global {
 	namespace App {
 		interface Locals extends Record<any> {
 			currentUser: User | null;
+			runtime?: {
+				env?: Record<string, unknown>;
+			};
 		}
 	}
 

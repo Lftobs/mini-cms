@@ -29,7 +29,7 @@ A minimal CMS that connects directly to your GitHub repositories. Edit MDX and M
 - **Multiple OAuth Providers**: GitHub and Google OAuth integration
 - **JWT-Based Authentication**: Secure token-based authentication
 - **Token Rotation**: Automatic refresh token rotation for enhanced security
-- **Redis Blacklisting**: Token revocation with Redis for logout and security
+- **KV Blacklisting**: Token revocation with Cloudflare KV for logout and security
 - **Automatic Token Refresh**: Seamless user experience with middleware-based token refresh
 
 ### 👥 Team Collaboration
@@ -41,9 +41,12 @@ A minimal CMS that connects directly to your GitHub repositories. Edit MDX and M
 ## 🛠️ Tech Stack
 
 - **Frontend**: [Astro](https://astro.build/) + [Alpine.js](https://alpinejs.dev/) + [React](https://react.dev/)
-- **Backend API**: [Hono](https://hono.dev/) (Node.js)
+- **Backend API**: [Hono](https://hono.dev/)
 - **Database**: [Astro DB](https://astro.build/db/) (LibSQL/Turso)
-- **Cache/Sessions**: [Upstash Redis](https://upstash.com/)
+- **Deployment**: [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+- **Cache/Blacklist**: [Cloudflare KV](https://developers.cloudflare.com/kv/)
+- **Collaborative Editing**: [Yjs](https://yjs.dev/) via [Durable Objects](https://developers.cloudflare.com/durable-objects/)
+- **Analytics**: [Cloudflare Web Analytics](https://developers.cloudflare.com/web-analytics/)
 - **Authentication**: JWT (jsonwebtoken) + OAuth 2.0
 - **GitHub Integration**: [@octokit/rest](https://octokit.github.io/rest.js/)
 - **Editor**: [@mdxeditor/editor](https://mdxeditor.dev/)
@@ -57,43 +60,44 @@ A minimal CMS that connects directly to your GitHub repositories. Edit MDX and M
 
 - Node.js 18+ and pnpm
 - GitHub account
-- Upstash Redis account
+- Cloudflare account (Workers + KV, free tier)
 - Gmail account (for email notifications)
+
+### Cloudflare Setup
+
+1. **Create the KV namespace**
+   ```bash
+   npx wrangler kv namespace create KV
+   ```
+   Paste the returned `id` and `preview_id` into the `kv_namespaces` section of `wrangler.jsonc`.
+
+2. **Set production secrets** (each value is entered interactively):
+   ```bash
+   npx wrangler secret put JWT_SECRET_KEY
+   npx wrangler secret put JWT_REFRESH_SECRET
+   npx wrangler secret put GITHUB_ID
+   npx wrangler secret put GITHUB_SECRET
+   npx wrangler secret put GOOGLE_ID
+   npx wrangler secret put GOOGLE_SECRET
+   npx wrangler secret put GMAIL_USER
+   npx wrangler secret put GMAIL_APP_PASSWORD
+   npx wrangler secret put GITHUB_APP_ID
+   npx wrangler secret put GITHUB_PRIVATE_KEY
+   npx wrangler secret put ASTRO_DB_REMOTE_URL
+   npx wrangler secret put ASTRO_DB_APP_TOKEN
+   ```
+
+3. **Web Analytics**: add your site in Cloudflare dashboard → Web Analytics and set `PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN` (as a non-secret var in `wrangler.jsonc`).
+
+4. **Deploy**
+   ```bash
+   pnpm build
+   npx wrangler pages deploy dist
+   ```
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
-
-```bash
-# Database
-ASTRO_DB_REMOTE_URL=your_turso_database_url
-ASTRO_DB_APP_TOKEN=your_turso_app_token
-
-# GitHub OAuth
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
-GITHUB_APP_ID=your_github_app_id
-GITHUB_APP_PRIVATE_KEY=your_github_app_private_key
-
-# Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-# JWT Secrets
-JWT_SECRET_KEY=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-
-# Redis (Upstash)
-UPSTASH_URL=your_upstash_redis_url
-UPSTASH_TOKEN=your_upstash_token
-
-# Email (Gmail)
-EMAIL_USER=your_gmail_address
-EMAIL_PASS=your_gmail_app_password
-
-# App Configuration
-PUBLIC_BASE_URL=http://localhost:4321
-```
+For local development, copy the keys from `.dev.vars` and fill in values. Public vars (`SITE`, `APP_ENV`, `PUBLIC_APP_ENV`, `BASE_URL`) live in `wrangler.jsonc`; secrets go in `.dev.vars` locally and `wrangler secret put` in production.
 
 ### Setup
 
@@ -173,7 +177,7 @@ All commands are run from the root of the project:
 1. **Login**: User authenticates via GitHub or Google OAuth
 2. **Token Generation**: JWT access token (15m) and refresh token (7d) are issued
 3. **Middleware**: Checks and auto-refreshes expired tokens
-4. **Logout**: Tokens are blacklisted in Redis
+4. **Logout**: Tokens are blacklisted in Cloudflare KV
 
 ### GitHub Integration
 

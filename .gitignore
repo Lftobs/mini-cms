@@ -18,6 +18,10 @@ npm_output.log*
 # environment variables
 .env
 .env.production
+.dev.vars
+
+# generated types
+worker-configuration.d.ts
 
 # macOS-specific files
 .DS_Store
@@ -27,3 +31,4 @@ npm_output.log*
 .specs/
 gen_jwt.py
 .vercel
+.wrangler/

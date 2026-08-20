@@ -1,6 +1,6 @@
 ---
 import "../styles/global.css";
-import Analytics from "@vercel/analytics/astro";
+import CloudflareAnalytics from "../components/CloudflareAnalytics.astro";
 
 interface Props {
 	title?: string;
@@ -110,7 +110,7 @@ const {
 			rel="stylesheet"
 		/>
 		<link rel="sitemap" href="/sitemap-index.xml" />
-		<Analytics />
+		<CloudflareAnalytics />
 	</head>
 	<body class="min-h-screen bg-earth-100">
 		<slot />

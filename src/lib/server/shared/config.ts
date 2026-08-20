@@ -16,6 +16,13 @@ if (import.meta.env.APP_ENV === 'prod') {
   });
 }
 
+import { createPrivateKey } from "node:crypto";
+
+function normalizePrivateKey(key: string): string {
+    if (!key.includes("-----BEGIN RSA PRIVATE KEY-----")) return key;
+    return createPrivateKey(key).export({ type: "pkcs8", format: "pem" }).toString();
+}
+
 export const config = {
   auth: {
     jwt: {
@@ -62,7 +69,7 @@ export const config = {
   github: {
     app: {
       id: import.meta.env.GITHUB_APP_ID || import.meta.env.APP_ID!,
-      privateKey: import.meta.env.GITHUB_PRIVATE_KEY || import.meta.env.PRIVATE_KEY!,
+      privateKey: normalizePrivateKey(import.meta.env.GITHUB_PRIVATE_KEY || import.meta.env.PRIVATE_KEY!),
     }
   },
   app: {

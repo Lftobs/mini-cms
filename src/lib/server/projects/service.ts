@@ -70,7 +70,11 @@ export class ProjectService {
         userId: string,
         accessType: "owner" | "member" | "both" = "both"
     ) {
-        const project = await this.repository.getProjectWithOrg(projectId);
+        const { createCachedFetcher } = await import("../../../utils/cache");
+        const cache = createCachedFetcher<any, string>('projectWithOrg', async (id) => {
+            return await this.repository.getProjectWithOrg(id);
+        }, { ttl: 60 });
+        const project = await cache.fetch(projectId);
         if (!project) {
             throw new NotFoundError("Project not found");
         }

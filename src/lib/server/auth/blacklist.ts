@@ -1,25 +1,21 @@
-import { Redis } from "@upstash/redis";
 import { createHash } from "crypto";
-
-const { UPSTASH_URL, UPSTASH_TOKEN } = import.meta.env;
-
-// Initialize Redis client
-const redis = new Redis({
-    url: UPSTASH_URL!,
-    token: UPSTASH_TOKEN!,
-});
+import { getKV } from "../shared/kv";
 
 /**
- * Token Blacklist Service using Redis
+ * Token Blacklist Service using Cloudflare KV
  * 
  * This service manages the blacklisting of JWT tokens (both access and refresh tokens).
- * When tokens are invalidated (e.g., on logout or refresh), they are added to a Redis
- * blacklist with automatic expiry matching the token's TTL.
+ * When tokens are invalidated (e.g., on logout or refresh), they are added to a KV
+ * entry with automatic expiry matching the token's TTL.
+ *
+ * Note: Cloudflare KV is eventually consistent. A blacklisted token may remain
+ * valid for up to ~60 seconds until the write propagates. Acceptable for this
+ * app, but keep in mind if revocation latency matters.
  */
 
 /**
  * Hash a token using SHA-256 for storage
- * We hash tokens before storing to avoid storing raw JWTs in Redis
+ * We hash tokens before storing to avoid storing raw JWTs in KV
  * 
  * @param token - The JWT token to hash
  * @returns Hex-encoded SHA-256 hash of the token
@@ -29,10 +25,10 @@ function hashToken(token: string): string {
 }
 
 /**
- * Generate Redis key for a blacklisted token
+ * Generate KV key for a blacklisted token
  * 
  * @param tokenHash - The hashed token
- * @returns Redis key with namespace
+ * @returns KV key with namespace
  */
 function getBlacklistKey(tokenHash: string): string {
     return `auth:blacklist:${tokenHash}`;
@@ -43,7 +39,8 @@ function getBlacklistKey(tokenHash: string): string {
  * 
  * @param token - The JWT token to blacklist
  * @param expiresInSeconds - Time in seconds until the token naturally expires
- *                          Redis will automatically remove the entry after this time
+ *                          KV will automatically remove the entry after this time
+ *                          (minimum supported TTL is 60 seconds)
  * @returns Promise that resolves when token is blacklisted
  * 
  * @example
@@ -59,16 +56,20 @@ export async function addToBlacklist(
     token: string,
     expiresInSeconds: number,
 ): Promise<void> {
+    const kv = getKV();
+    if (!kv) {
+        throw new Error("KV binding not available");
+    }
+
     try {
         const tokenHash = hashToken(token);
         const key = getBlacklistKey(tokenHash);
 
-        // store in redis with TTL matching token expiry
+        // store in KV with TTL matching token expiry
         // value is timestamp when it was blacklisted (for debugging/auditing)
-        await redis.set(key, Date.now(), {
-            ex: expiresInSeconds,
+        await kv.put(key, JSON.stringify({ blacklistedAt: Date.now() }), {
+            expirationTtl: Math.max(60, expiresInSeconds),
         });
-
     } catch (error) {
         throw new Error("Failed to blacklist token");
     }
@@ -89,14 +90,20 @@ export async function addToBlacklist(
  * ```
  */
 export async function isBlacklisted(token: string): Promise<boolean> {
+    const kv = getKV();
+    if (!kv) {
+        console.warn("[Blacklist] KV binding not available, treating token as valid");
+        return false;
+    }
+
     try {
         const tokenHash = hashToken(token);
         const key = getBlacklistKey(tokenHash);
 
-        // Check if key exists in Redis
-        const exists = await redis.exists(key);
+        // Check if key exists in KV
+        const value = await kv.get(key);
 
-        return exists === 1;
+        return value !== null;
     } catch (error) {
         console.error("[Blacklist] Error checking token blacklist:", error);
         // On error, fail closed (assume token is valid to avoid blocking legitimate users)

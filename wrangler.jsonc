@@ -1,0 +1,37 @@
+{
+  "name": "mini-cms",
+  "main": "dist/_worker.js/index.js",
+  "compatibility_date": "2025-09-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "1d9a327dbdde41768dc93a19b227491c",
+      "preview_id": "5ee9ff7b3fb04fce90a5b6ade0031be5"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "COLLAB",
+        "class_name": "CollabRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["CollabRoom"]
+    }
+  ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "SITE": "https://mini-cms.xyz",
+    "APP_ENV": "prod",
+    "PUBLIC_APP_ENV": "prod",
+    "BASE_URL": "https://mini-cms.xyz"
+  }
+}

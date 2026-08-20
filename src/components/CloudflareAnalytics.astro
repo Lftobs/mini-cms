@@ -1,0 +1,12 @@
+---
+// Set PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN from Web Analytics → Manage site
+const token = import.meta.env.PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN as string | undefined;
+---
+
+{token && (
+	<script
+		defer
+		src="https://static.cloudflareinsights.com/beacon.min.js"
+		data-cf-beacon={JSON.stringify({ token, spa: true })}
+	/>
+)}

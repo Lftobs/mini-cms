@@ -1,4 +1,4 @@
-import { transporter, isEmailEnabled } from "./client";
+import { getTransporter, isEmailEnabled } from "./client";
 import {
     generateInviteEmailHTML,
     generateInviteEmailText,
@@ -25,6 +25,8 @@ export const sendInviteEmail = async ({
     messageId?: string;
     error?: string;
 }> => {
+    const transporter = getTransporter();
+
     if (!isEmailEnabled || !transporter) {
         console.warn(
             "[Email] Email service is not configured. Skipping email send.",

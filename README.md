@@ -92,8 +92,9 @@ A minimal CMS that connects directly to your GitHub repositories. Edit MDX and M
 4. **Deploy**
    ```bash
    pnpm build
-   npx wrangler pages deploy dist
+   npx wrangler deploy
    ```
+   or just `pnpm deploy` (types + build + deploy).
 
 ### Environment Variables
 

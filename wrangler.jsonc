@@ -1,14 +1,13 @@
 {
-  // Replace with real ids from: npx wrangler kv namespace create KV
   "name": "mini-cms",
-  "pages_build_output_dir": "./dist",
+  "main": "dist/_worker.js/index.js",
   "compatibility_date": "2025-09-15",
   "compatibility_flags": ["nodejs_compat"],
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "<replace-with-kv-namespace-id>",
-      "preview_id": "<replace-with-preview-namespace-id>"
+      "id": "1d9a327dbdde41768dc93a19b227491c",
+      "preview_id": "5ee9ff7b3fb04fce90a5b6ade0031be5"
     }
   ],
   "durable_objects": {
@@ -22,9 +21,13 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": ["CollabRoom"]
+      "new_sqlite_classes": ["CollabRoom"]
     }
   ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
   "vars": {
     "SITE": "https://mini-cms.xyz",
     "APP_ENV": "prod",

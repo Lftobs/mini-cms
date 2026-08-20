@@ -6,7 +6,8 @@
 		"dev:astro": "wrangler types && astro dev --port 4321 --remote",
 		"dev": "npm run dev:astro",
 		"build": "wrangler types && astro build --remote",
-		"preview": "wrangler types && wrangler pages dev dist --port 8788",
+		"preview": "wrangler types && wrangler dev",
+		"deploy": "wrangler types && astro build --remote && wrangler deploy",
 		"astro": "astro"
 	},
 	"dependencies": {

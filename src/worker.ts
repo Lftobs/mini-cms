@@ -52,7 +52,11 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
                 awarenessProtocol.encodeAwarenessUpdate(this.awareness!, changedClients),
             );
             const buff = encoding.toUint8Array(encoder);
+<<<<<<< HEAD
             for (const client of this.ctx.getWebSockets()) {
+=======
+            for (const client of this.clients) {
+>>>>>>> origin/switch
                 if (client.readyState === WebSocket.OPEN) client.send(buff);
             }
         });
@@ -61,10 +65,17 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
 
     private schedulePersist(): void {
         if (this.persistTimer) return;
+<<<<<<< HEAD
         this.persistTimer = setTimeout(async () => {
             this.persistTimer = null;
             if (this.doc) {
                 await this.ctx.storage.put("doc", Y.encodeStateAsUpdate(this.doc));
+=======
+        this.persistTimer = setTimeout(() => {
+            this.persistTimer = null;
+            if (this.doc) {
+                this.ctx.storage.put("doc", Y.encodeStateAsUpdate(this.doc));
+>>>>>>> origin/switch
             }
         }, 1000);
     }
@@ -74,7 +85,11 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
         encoding.writeVarUint(encoder, messageSync);
         syncProtocol.writeUpdate(encoder, update);
         const buff = encoding.toUint8Array(encoder);
+<<<<<<< HEAD
         for (const client of this.ctx.getWebSockets()) {
+=======
+        for (const client of this.clients) {
+>>>>>>> origin/switch
             if (client !== origin && client.readyState === WebSocket.OPEN) {
                 client.send(buff);
             }
@@ -100,6 +115,7 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
     }
 
     async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+<<<<<<< HEAD
         if (typeof message === "string") {
             ws.close(1003, "Unsupported text message");
             return;
@@ -112,6 +128,14 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
             const encoder = encoding.createEncoder();
             const decoder = decoding.createDecoder(new Uint8Array(message as ArrayBuffer));
             const messageType = decoding.readVarUint(decoder);
+=======
+        const doc = await this.getDoc();
+        const awareness = this.getAwareness(doc);
+
+        const encoder = encoding.createEncoder();
+        const decoder = decoding.createDecoder(new Uint8Array(message as ArrayBuffer));
+        const messageType = decoding.readVarUint(decoder);
+>>>>>>> origin/switch
 
         switch (messageType) {
             case messageSync:
@@ -122,6 +146,7 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
                 }
                 break;
             case messageAwareness:
+<<<<<<< HEAD
                 const update = decoding.readVarUint8Array(decoder);
                 // Extract client IDs from the awareness update to track them
                 const clientIds = new Set(this.wsClientIds.get(ws) || []);
@@ -142,10 +167,16 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
                 awarenessProtocol.applyAwarenessUpdate(
                     awareness,
                     update,
+=======
+                awarenessProtocol.applyAwarenessUpdate(
+                    awareness,
+                    decoding.readVarUint8Array(decoder),
+>>>>>>> origin/switch
                     ws,
                 );
                 break;
         }
+<<<<<<< HEAD
         } catch (e) {
             console.error("Error parsing WebSocket message:", e);
             ws.close(1007, "Invalid payload");
@@ -167,11 +198,24 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
                 );
             }
             this.wsClientIds.delete(ws);
+=======
+    }
+
+    async webSocketClose(ws: WebSocket): Promise<void> {
+        this.clients.delete(ws);
+        if (this.awareness) {
+            awarenessProtocol.removeAwarenessStates(
+                this.awareness,
+                [ws] as unknown as number[],
+                null,
+            );
+>>>>>>> origin/switch
         }
     }
 
     async webSocketError(ws: WebSocket): Promise<void> {
         this.clients.delete(ws);
+<<<<<<< HEAD
         if (this.awareness) {
             const clientIds = this.wsClientIds.get(ws) || [];
             if (clientIds.length > 0) {
@@ -183,5 +227,7 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
             }
             this.wsClientIds.delete(ws);
         }
+=======
+>>>>>>> origin/switch
     }
 }

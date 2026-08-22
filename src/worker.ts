@@ -116,27 +116,62 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
                 }
                 break;
             case messageAwareness:
+                const update = decoding.readVarUint8Array(decoder);
+                // Extract client IDs from the awareness update to track them
+                const clientIds = new Set(this.wsClientIds.get(ws) || []);
+                const awarenessDecoder = decoding.createDecoder(update);
+                const count = decoding.readVarUint(awarenessDecoder);
+                for (let i = 0; i < count; i++) {
+                    const clientId = decoding.readVarUint(awarenessDecoder);
+                    clientIds.add(clientId);
+                    // Skip rest of state block to get to the next ID
+                    decoding.readVarUint(awarenessDecoder);
+                    const stateLen = decoding.readVarUint(awarenessDecoder);
+                    for (let j = 0; j < stateLen; j++) {
+                        decoding.readUint8(awarenessDecoder);
+                    }
+                }
+                this.wsClientIds.set(ws, Array.from(clientIds));
+
                 awarenessProtocol.applyAwarenessUpdate(
                     awareness,
-                    decoding.readVarUint8Array(decoder),
+                    update,
                     ws,
                 );
                 break;
         }
     }
 
+    // Store awareness client IDs associated with each WebSocket
+    private wsClientIds = new Map<WebSocket, number[]>();
+
     async webSocketClose(ws: WebSocket): Promise<void> {
         this.clients.delete(ws);
         if (this.awareness) {
-            awarenessProtocol.removeAwarenessStates(
-                this.awareness,
-                [ws] as unknown as number[],
-                null,
-            );
+            const clientIds = this.wsClientIds.get(ws) || [];
+            if (clientIds.length > 0) {
+                awarenessProtocol.removeAwarenessStates(
+                    this.awareness,
+                    clientIds,
+                    null,
+                );
+            }
+            this.wsClientIds.delete(ws);
         }
     }
 
     async webSocketError(ws: WebSocket): Promise<void> {
         this.clients.delete(ws);
+        if (this.awareness) {
+            const clientIds = this.wsClientIds.get(ws) || [];
+            if (clientIds.length > 0) {
+                awarenessProtocol.removeAwarenessStates(
+                    this.awareness,
+                    clientIds,
+                    null,
+                );
+            }
+            this.wsClientIds.delete(ws);
+        }
     }
 }

@@ -119,7 +119,12 @@ export class RepoService {
         repo: string,
         path: string
     ): Promise<{ allowed: boolean; allowedDirs?: string[] }> {
-        const allowedDirs = await this.getAllowedDirectories(projectId, owner, repo);
+        // Read directly from strongly current DB settings instead of GitHub cache to avoid stale KV
+        const { ProjectRepository } = await import("../projects/repository");
+        const projectRepo = new ProjectRepository();
+        const settings = await projectRepo.getSettings(projectId);
+
+        const allowedDirs = settings?.public_directories ? JSON.parse(settings.public_directories) : [];
 
         if (allowedDirs.length > 0) {
             const isAllowed = allowedDirs.some(

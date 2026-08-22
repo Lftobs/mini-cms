@@ -52,7 +52,7 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
                 awarenessProtocol.encodeAwarenessUpdate(this.awareness!, changedClients),
             );
             const buff = encoding.toUint8Array(encoder);
-            for (const client of this.clients) {
+            for (const client of this.ctx.getWebSockets()) {
                 if (client.readyState === WebSocket.OPEN) client.send(buff);
             }
         });
@@ -61,10 +61,10 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
 
     private schedulePersist(): void {
         if (this.persistTimer) return;
-        this.persistTimer = setTimeout(() => {
+        this.persistTimer = setTimeout(async () => {
             this.persistTimer = null;
             if (this.doc) {
-                this.ctx.storage.put("doc", Y.encodeStateAsUpdate(this.doc));
+                await this.ctx.storage.put("doc", Y.encodeStateAsUpdate(this.doc));
             }
         }, 1000);
     }
@@ -74,7 +74,7 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
         encoding.writeVarUint(encoder, messageSync);
         syncProtocol.writeUpdate(encoder, update);
         const buff = encoding.toUint8Array(encoder);
-        for (const client of this.clients) {
+        for (const client of this.ctx.getWebSockets()) {
             if (client !== origin && client.readyState === WebSocket.OPEN) {
                 client.send(buff);
             }
@@ -100,12 +100,18 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
     }
 
     async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+        if (typeof message === "string") {
+            ws.close(1003, "Unsupported text message");
+            return;
+        }
+
         const doc = await this.getDoc();
         const awareness = this.getAwareness(doc);
 
-        const encoder = encoding.createEncoder();
-        const decoder = decoding.createDecoder(new Uint8Array(message as ArrayBuffer));
-        const messageType = decoding.readVarUint(decoder);
+        try {
+            const encoder = encoding.createEncoder();
+            const decoder = decoding.createDecoder(new Uint8Array(message as ArrayBuffer));
+            const messageType = decoding.readVarUint(decoder);
 
         switch (messageType) {
             case messageSync:
@@ -139,6 +145,10 @@ export class CollabRoom extends DurableObject<Cloudflare.Env> {
                     ws,
                 );
                 break;
+        }
+        } catch (e) {
+            console.error("Error parsing WebSocket message:", e);
+            ws.close(1007, "Invalid payload");
         }
     }
 

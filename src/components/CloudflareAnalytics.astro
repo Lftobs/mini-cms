@@ -1,6 +1,9 @@
 ---
+import { getRequestContext } from "../utils/requestContext";
+
 // Set PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN from Web Analytics → Manage site
-const token = import.meta.env.PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN as string | undefined;
+const env = getRequestContext()?.env;
+const token = (env?.PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN || import.meta.env.PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN) as string | undefined;
 ---
 
 {token && (

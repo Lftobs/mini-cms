@@ -18,9 +18,15 @@ if (import.meta.env.APP_ENV === 'prod') {
 
 import { createPrivateKey } from "node:crypto";
 
-function normalizePrivateKey(key: string): string {
-    if (!key.includes("-----BEGIN RSA PRIVATE KEY-----")) return key;
-    return createPrivateKey(key).export({ type: "pkcs8", format: "pem" }).toString();
+function normalizePrivateKey(key: string | undefined): string | undefined {
+    if (!key) return undefined;
+    try {
+        if (!key.includes("-----BEGIN RSA PRIVATE KEY-----")) return key;
+        return createPrivateKey(key).export({ type: "pkcs8", format: "pem" }).toString();
+    } catch (e) {
+        console.warn("Invalid GitHub Private Key format");
+        return undefined;
+    }
 }
 
 export const config = {
@@ -69,7 +75,7 @@ export const config = {
   github: {
     app: {
       id: import.meta.env.GITHUB_APP_ID || import.meta.env.APP_ID!,
-      privateKey: normalizePrivateKey(import.meta.env.GITHUB_PRIVATE_KEY || import.meta.env.PRIVATE_KEY!),
+      privateKey: normalizePrivateKey(import.meta.env.GITHUB_PRIVATE_KEY || import.meta.env.PRIVATE_KEY),
     }
   },
   app: {

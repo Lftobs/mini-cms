@@ -159,9 +159,11 @@ export class AuthService {
         try {
             const payload = await this.verifyAccessToken(accessToken);
 
-            const userCache = createCachedFetcher<User | null, string>('user', async (userId) => {
-                return await this.repository.findById(userId);
-            }, { ttl: 60 }); // Cache for 60 seconds
+            const userCache = createCachedFetcher<User, string>('user', async (userId) => {
+                const user = await this.repository.findById(userId);
+                if (!user) throw new Error("User not found");
+                return user;
+            }, { ttl: 60 });
 
             return await userCache.fetch(payload.id);
         } catch (error) {

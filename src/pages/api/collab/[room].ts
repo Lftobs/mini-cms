@@ -1,5 +1,4 @@
 import type { APIRoute } from "astro";
-<<<<<<< HEAD
 import { config } from "../../../lib/server/shared/config";
 import { AuthService } from "../../../lib/server/auth/service";
 import { AuthRepository } from "../../../lib/server/auth/repository";
@@ -7,16 +6,11 @@ import { OrganizationService } from "../../../lib/server/organizations/service";
 import { OrganizationRepository } from "../../../lib/server/organizations/repository";
 import { ProjectService } from "../../../lib/server/projects/service";
 import { ProjectRepository } from "../../../lib/server/projects/repository";
-=======
-import jwt from "jsonwebtoken";
-import { config } from "../../../lib/server/shared/config";
->>>>>>> origin/switch
 
 export const ALL: APIRoute = async (context) => {
 	const accessToken = context.cookies.get("access_token")?.value;
 	if (!accessToken) return new Response("Unauthorized", { status: 401 });
 
-<<<<<<< HEAD
     const authRepo = new AuthRepository();
     const orgRepo = new OrganizationRepository();
     const orgService = new OrganizationService(orgRepo);
@@ -26,10 +20,6 @@ export const ALL: APIRoute = async (context) => {
 	try {
 		const payload = await authService.verifyAccessToken(accessToken);
         userId = payload.id;
-=======
-	try {
-		jwt.verify(accessToken, config.auth.jwt.secret);
->>>>>>> origin/switch
 	} catch {
 		return new Response("Unauthorized", { status: 401 });
 	}
@@ -41,7 +31,6 @@ export const ALL: APIRoute = async (context) => {
 	if (!collab) return new Response("Collaboration unavailable", { status: 503 });
 
 	const room = String(context.params.room ?? "default");
-<<<<<<< HEAD
 
     try {
         const projectRepo = new ProjectRepository();
@@ -52,8 +41,6 @@ export const ALL: APIRoute = async (context) => {
         return new Response("Forbidden or Project Not Found", { status: 403 });
     }
 
-=======
->>>>>>> origin/switch
 	const id = collab.idFromName(room);
 	const stub = collab.get(id);
 

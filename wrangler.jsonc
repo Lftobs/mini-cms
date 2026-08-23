@@ -32,11 +32,7 @@
     "SITE": "https://mini-cms.xyz",
     "APP_ENV": "prod",
     "PUBLIC_APP_ENV": "prod",
-<<<<<<< HEAD
     "BASE_URL": "https://mini-cms.xyz",
     "PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN": ""
-=======
-    "BASE_URL": "https://mini-cms.xyz"
->>>>>>> origin/switch
   }
 }

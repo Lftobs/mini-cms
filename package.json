@@ -57,6 +57,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.3.4",
 		"@types/jsonwebtoken": "^9.0.10",
-		"@types/nodemailer": "^7.0.4"
+		"@types/nodemailer": "^7.0.4",
+		"wrangler": "^4.125.0"
 	}
 }

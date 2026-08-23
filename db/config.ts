@@ -6,6 +6,7 @@ import ProjectMembers from "./project-members";
 import ProjectSettings from "./project-settings";
 import Projects from "./projects";
 import Users from "./user";
+import Blacklist from "./blacklist";
 
 export default defineDb({
 	tables: {
@@ -17,5 +18,6 @@ export default defineDb({
 		ProjectActivity,
 		ProjectMembers,
 		Invites,
+		Blacklist,
 	},
 });

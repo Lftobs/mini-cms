@@ -6,6 +6,7 @@ import { AuthenticationError } from "../shared/errors";
 import type { User, CreateUserData } from "../shared/types";
 import type { OrganizationService } from "../organizations/service";
 import { isBlacklisted, addToBlacklist, blacklistTokenPair } from "./blacklist";
+import { createCachedFetcher } from "../../../utils/cache";
 
 export interface TokenPayload {
     id: string;
@@ -157,7 +158,14 @@ export class AuthService {
     async getCurrentUser(accessToken: string): Promise<User | null> {
         try {
             const payload = await this.verifyAccessToken(accessToken);
-            return await this.repository.findById(payload.id);
+
+            const userCache = createCachedFetcher<User, string>('user', async (userId) => {
+                const user = await this.repository.findById(userId);
+                if (!user) throw new Error("User not found");
+                return user;
+            }, { ttl: 60 });
+
+            return await userCache.fetch(payload.id);
         } catch (error) {
             return null;
         }

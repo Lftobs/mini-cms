@@ -70,6 +70,7 @@ export class ProjectService {
         userId: string,
         accessType: "owner" | "member" | "both" = "both"
     ) {
+        // Fetch project and its org directly from the DB to ensure strongly current policy check
         const project = await this.repository.getProjectWithOrg(projectId);
         if (!project) {
             throw new NotFoundError("Project not found");

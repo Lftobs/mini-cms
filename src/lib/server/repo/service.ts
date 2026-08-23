@@ -3,6 +3,7 @@ import { RepoRepository } from "./repository";
 import { config } from "../shared/config";
 import { NotFoundError, ValidationError } from "../shared/errors";
 import YAML from "yaml";
+import { createCachedFetcher } from "../../../utils/cache";
 
 export const TARGET_BRANCH = "mini-cms-flow";
 
@@ -42,12 +43,20 @@ export class RepoService {
             throw new ValidationError("Project ID is required");
         }
 
-        const project = await this.repository.findProjectById(projectId);
+        const projectCache = createCachedFetcher<any, string>('project', async (id) => {
+            return await this.repository.findProjectById(id);
+        }, { ttl: 60 });
+
+        const orgCache = createCachedFetcher<any, string>('org', async (id) => {
+            return await this.repository.findOrgById(id);
+        }, { ttl: 60 });
+
+        const project = await projectCache.fetch(projectId);
         if (!project) {
             throw new NotFoundError("Project not found");
         }
 
-        const org = await this.repository.findOrgById(project.orgs_id);
+        const org = await orgCache.fetch(project.orgs_id);
         if (!org) {
             throw new NotFoundError("Organization not found for project");
         }
@@ -70,30 +79,38 @@ export class RepoService {
         owner: string,
         repo: string
     ): Promise<string[]> {
-        try {
-            const octokit = await this.getProjectOctokit(projectId);
-            const { data: configData } = await octokit.rest.repos.getContent({
-                owner,
-                repo,
-                path: ".mini-cms.yml",
-                ref: TARGET_BRANCH,
-            });
+        const fetcher = createCachedFetcher<string[], string>(
+            `project:${projectId}:allowed_directories`,
+            async () => {
+                try {
+                    const octokit = await this.getProjectOctokit(projectId);
+                    const { data: configData } = await octokit.rest.repos.getContent({
+                        owner,
+                        repo,
+                        path: ".mini-cms.yml",
+                        ref: TARGET_BRANCH,
+                    });
 
-            if (
-                !Array.isArray(configData) &&
-                configData.type === "file" &&
-                configData.content
-            ) {
-                const configContent = Buffer.from(configData.content, "base64").toString("utf8");
-                const parsedConfig = YAML.parse(configContent);
-                return parsedConfig.allowed_directories || [];
-            }
+                    if (
+                        !Array.isArray(configData) &&
+                        configData.type === "file" &&
+                        configData.content
+                    ) {
+                        const configContent = Buffer.from(configData.content, "base64").toString("utf8");
+                        const parsedConfig = YAML.parse(configContent);
+                        return parsedConfig.allowed_directories || [];
+                    }
 
-            return [];
-        } catch (e) {
-            console.warn("Could not fetch allowed_directories in .mini-cms.yml", e);
-            return [];
-        }
+                    return [];
+                } catch (e) {
+                    console.warn("Could not fetch allowed_directories in .mini-cms.yml", e);
+                    return [];
+                }
+            },
+            { ttl: 300 } // Cache for 5 minutes
+        );
+
+        return await fetcher.fetch(`${owner}/${repo}`);
     }
 
     async validateAllowedDirectory(
@@ -102,7 +119,12 @@ export class RepoService {
         repo: string,
         path: string
     ): Promise<{ allowed: boolean; allowedDirs?: string[] }> {
-        const allowedDirs = await this.getAllowedDirectories(projectId, owner, repo);
+        // Read directly from strongly current DB settings instead of GitHub cache to avoid stale KV
+        const { ProjectRepository } = await import("../projects/repository");
+        const projectRepo = new ProjectRepository();
+        const settings = await projectRepo.getSettings(projectId);
+
+        const allowedDirs = settings?.public_directories ? JSON.parse(settings.public_directories) : [];
 
         if (allowedDirs.length > 0) {
             const isAllowed = allowedDirs.some(

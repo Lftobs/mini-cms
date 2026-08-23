@@ -32,6 +32,7 @@
     "SITE": "https://mini-cms.xyz",
     "APP_ENV": "prod",
     "PUBLIC_APP_ENV": "prod",
-    "BASE_URL": "https://mini-cms.xyz"
+    "BASE_URL": "https://mini-cms.xyz",
+    "PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN": ""
   }
 }

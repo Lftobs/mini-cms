@@ -1,21 +1,16 @@
 import { createHash } from "crypto";
-import { getKV } from "../shared/kv";
+import { db, Blacklist, eq, lt } from "astro:db";
 
 /**
- * Token Blacklist Service using Cloudflare KV
+ * Token Blacklist Service using Astro DB (Turso)
  * 
  * This service manages the blacklisting of JWT tokens (both access and refresh tokens).
- * When tokens are invalidated (e.g., on logout or refresh), they are added to a KV
- * entry with automatic expiry matching the token's TTL.
- * 
- * Note: Cloudflare KV is eventually consistent. A blacklisted token may remain
- * valid for up to ~60 seconds until the write propagates. Acceptable for this
- * app, but keep in mind if revocation latency matters.
+ * When tokens are invalidated (e.g., on logout or refresh), they are added to the DB.
  */
 
 /**
  * Hash a token using SHA-256 for storage
- * We hash tokens before storing to avoid storing raw JWTs in KV
+ * We hash tokens before storing to avoid storing raw JWTs
  * 
  * @param token - The JWT token to hash
  * @returns Hex-encoded SHA-256 hash of the token
@@ -25,13 +20,17 @@ function hashToken(token: string): string {
 }
 
 /**
- * Generate KV key for a blacklisted token
- * 
- * @param tokenHash - The hashed token
- * @returns KV key with namespace
+ * Helper to occasionally clean up expired tokens from the DB
  */
-function getBlacklistKey(tokenHash: string): string {
-    return `auth:blacklist:${tokenHash}`;
+async function cleanupExpiredTokens() {
+    try {
+        // Only run 10% of the time to avoid DB overhead on every write
+        if (Math.random() < 0.1) {
+            await db.delete(Blacklist).where(lt(Blacklist.expiresAt, Date.now()));
+        }
+    } catch (e) {
+        console.warn("Failed to clean up expired tokens", e);
+    }
 }
 
 /**
@@ -39,37 +38,23 @@ function getBlacklistKey(tokenHash: string): string {
  * 
  * @param token - The JWT token to blacklist
  * @param expiresInSeconds - Time in seconds until the token naturally expires
- *                          KV will automatically remove the entry after this time
- *                          (minimum supported TTL is 60 seconds)
  * @returns Promise that resolves when token is blacklisted
- * 
- * @example
- * ```ts
- * // Blacklist an access token that expires in 15 minutes (900 seconds)
- * await addToBlacklist(accessToken, 900);
- * 
- * // Blacklist a refresh token that expires in 7 days (604800 seconds)
- * await addToBlacklist(refreshToken, 604800);
- * ```
  */
 export async function addToBlacklist(
     token: string,
     expiresInSeconds: number,
 ): Promise<void> {
-    const kv = getKV();
-    if (!kv) {
-        throw new Error("KV binding not available");
-    }
-
     try {
         const tokenHash = hashToken(token);
-        const key = getBlacklistKey(tokenHash);
+        const expiresAt = Date.now() + (expiresInSeconds * 1000);
 
-        // store in KV with TTL matching token expiry
-        // value is timestamp when it was blacklisted (for debugging/auditing)
-        await kv.put(key, JSON.stringify({ blacklistedAt: Date.now() }), {
-            expirationTtl: Math.max(60, expiresInSeconds),
-        });
+        await db.insert(Blacklist).values({
+            id: tokenHash,
+            expiresAt: expiresAt
+        }).onConflictDoNothing();
+
+        // Fire and forget cleanup
+        cleanupExpiredTokens().catch(() => {});
     } catch (error) {
         throw new Error("Failed to blacklist token");
     }
@@ -80,35 +65,26 @@ export async function addToBlacklist(
  * 
  * @param token - The JWT token to check
  * @returns Promise that resolves to true if token is blacklisted, false otherwise
- * 
- * @example
- * ```ts
- * const isInvalid = await isBlacklisted(accessToken);
- * if (isInvalid) {
- *   throw new AuthenticationError('Token has been revoked');
- * }
- * ```
  */
 export async function isBlacklisted(token: string): Promise<boolean> {
-    const kv = getKV();
-    if (!kv) {
-        console.warn("[Blacklist] KV binding not available, treating token as valid");
-        return false;
-    }
-
     try {
         const tokenHash = hashToken(token);
-        const key = getBlacklistKey(tokenHash);
 
-        // Check if key exists in KV
-        const value = await kv.get(key);
+        const result = await db.select()
+            .from(Blacklist)
+            .where(eq(Blacklist.id, tokenHash))
+            .get();
 
-        return value !== null;
+        if (result && result.expiresAt < Date.now()) {
+            // Already expired, no longer matters
+            return false;
+        }
+
+        return result !== undefined;
     } catch (error) {
         console.error("[Blacklist] Error checking token blacklist:", error);
-        // On error, fail closed (assume token is valid to avoid blocking legitimate users)
-        // In production, you might want to fail open or have more sophisticated error handling
-        return false;
+        // Fail closed for security (treat as blacklisted if we can't verify)
+        return true;
     }
 }
 
